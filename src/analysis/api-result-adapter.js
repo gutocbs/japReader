@@ -73,7 +73,11 @@ const defaultCandidates = (value) => {
 
 const dictionaryForm = (candidate) => {
   if (!Array.isArray(candidate.conj)) {
-    return { dictForm: candidate.text, dictFormReading: candidate.kana };
+    return {
+      dictForm: candidate.text,
+      dictFormReading: candidate.kana,
+      gloss: undefined,
+    };
   }
 
   const conjugation = candidate.conj.find(
@@ -85,18 +89,27 @@ const dictionaryForm = (candidate) => {
   );
 
   if (!conjugation) {
-    return { dictForm: candidate.text, dictFormReading: candidate.kana };
+    return {
+      dictForm: candidate.text,
+      dictFormReading: candidate.kana,
+      gloss: undefined,
+    };
   }
 
   const reading = conjugation.reading.trim();
   const bracketed = /^(.*?)\s*【([^】]+)】$/.exec(reading);
   if (!bracketed || bracketed[1].trim().length === 0) {
-    return { dictForm: reading, dictFormReading: reading };
+    return {
+      dictForm: reading,
+      dictFormReading: reading,
+      gloss: conjugation.gloss,
+    };
   }
 
   return {
     dictForm: bracketed[1].trim(),
     dictFormReading: bracketed[2],
+    gloss: conjugation.gloss,
   };
 };
 
@@ -126,12 +139,13 @@ const adaptChunk = (chunk, expectedText) => {
     }
 
     const root = dictionaryForm(candidate);
+    const definitions = formatDefinitions(candidate.gloss);
     words.push({
       word: candidate.text,
       dictForm: root.dictForm,
       dictFormReading: root.dictFormReading,
       rubyReading: candidate.kana,
-      definitions: formatDefinitions(candidate.gloss),
+      definitions: definitions || formatDefinitions(root.gloss),
     });
     offset += candidate.text.length;
   }

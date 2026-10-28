@@ -88,6 +88,23 @@ test("uses a conjugation root while preserving the surface reading", () => {
   });
 });
 
+test("uses the selected conjugation gloss when the surface candidate has none", () => {
+  const response = fixture("conjugation-gloss.json");
+  assertChunkCoverage(response);
+
+  const { words } = adaptAnalyzeResponse(response, response.text);
+  const conjugated = words.at(-2);
+
+  assert.deepEqual(conjugated, {
+    word: "上げた",
+    dictForm: "上げる",
+    dictFormReading: "あげる",
+    rubyReading: "あげた",
+    definitions:
+      '<div class="ichiran-definition"><div class="ichiran-gloss"><span class="ichiran-pos">[v1,vt]</span><span class="ichiran-gloss-text">raise &lt;something&gt; &amp; &quot;up&quot;</span><span class="ichiran-info">usu. transitive</span></div></div>',
+  });
+});
+
 test("orders compound and alternative chunks by source offsets", () => {
   const response = fixture("compound-alternatives.json");
   assertChunkCoverage(response);

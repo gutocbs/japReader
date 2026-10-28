@@ -1,0 +1,20 @@
+{
+  "text": "顔を上げた。",
+  "chunks": [
+    {
+      "index": 0,
+      "start": 0,
+      "length": 6,
+      "text": "顔を上げた。",
+      "analysis": [
+        [
+          [
+            ["kao", { "text": "顔", "kana": "かお", "gloss": [{ "pos": "[n]", "gloss": "face" }], "conj": [] }, []],
+            ["o", { "text": "を", "kana": "を", "gloss": [{ "pos": "[prt]", "gloss": "object marker" }], "conj": [] }, []],
+            ["ageta", { "text": "上げた", "kana": "あげた", "conj": [{ "reading": "上げる 【あげる】", "readok": true, "gloss": [{ "pos": "[v1,vt]", "gloss": "raise <something> & \"up\"", "info": "usu. transitive" }] }] }, []]
+          ]
+        ]
+      ]
+    }
+  ]
+}
