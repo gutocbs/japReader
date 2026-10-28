@@ -2,3 +2,5 @@ node_modules
 out
 src/boxes/*/box_size.json
 .vscode
+/docs/superpowers/specs
+/docs/superpowers/plans
