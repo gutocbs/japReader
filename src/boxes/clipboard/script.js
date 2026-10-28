@@ -1,7 +1,6 @@
 const { ipcRenderer, clipboard } = require("electron");
 const clipboardListener = require("clipboard-event");
 
-const charLimit = 90;
 let clipboardText = "";
 
 // Time complexity is pretty bad on Linux,
@@ -52,12 +51,8 @@ const handleChange = () => {
   if (text !== clipboardText && /[一-龯]|[ぁ-んァ-ン]|…/.test(text)) {
     clipboardText = text;
 
-    if (clipboardText.length >= charLimit) {
-      ipcRenderer.send("tooManyCharacters");
-    } else {
-      ipcRenderer.send("clipboardChanged", clipboardText);
-      ipcRenderer.send("parseNotification");
-    }
+    ipcRenderer.send("clipboardChanged", clipboardText);
+    ipcRenderer.send("parseNotification");
   }
 };
 

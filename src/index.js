@@ -9,8 +9,11 @@ const {
   shell,
 } = require("electron");
 const { spawn } = require("child_process");
-const { adaptAnalyzeResponse } = require("./analysis/api-result-adapter");
-const { createLocalApiRouter } = require("./analysis/local-api-router");
+const {
+  createReaderAnalysisRouter,
+  registerDeepLClipboardDispatch,
+  registerReaderClipboardAnalysis,
+} = require("./analysis/electron-analysis-composition");
 
 const tools = require("@tools");
 
@@ -204,6 +207,7 @@ const createBoxes = () => {
           .forEach((win) => {
             win.close();
           });
+        localApiRouter?.dispose();
         app.exit();
       }
     });
@@ -252,20 +256,12 @@ const createBoxes = () => {
       ichiBox.hide();
     });
 
-    localApiRouter = createLocalApiRouter({
-      adaptResponse: adaptAnalyzeResponse,
+    localApiRouter = createReaderAnalysisRouter({
       fetchImpl: fetch,
-      onSuccess: ({ words, fullText }) => {
-        readerBox.webContents.send("receiveParsedData", words, fullText);
-      },
-      onFailure: (code) => {
-        readerBox.webContents.send("apiAnalysisError", code);
-      },
+      readerBox,
     });
 
-    ipcMain.on("clipboardChanged", (event, text) => {
-      localApiRouter.analyze(text);
-    });
+    registerReaderClipboardAnalysis(ipcMain, localApiRouter);
 
     const dictBox = createWindow("dict", {
       icon: "images/logo/icon.png",
@@ -336,9 +332,7 @@ const createBoxes = () => {
       deepLBox.hide();
     });
 
-    ipcMain.on("clipboardChanged", (event, text) => {
-      deepLBox.webContents.send("translateWithDeepL", text);
-    });
+    registerDeepLClipboardDispatch(ipcMain, deepLBox);
 
     const translationBox = createWindow("translation", {
       icon: "images/logo/icon.png",
