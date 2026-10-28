@@ -101,6 +101,12 @@ Alternatively, if you don't want to install, you can download the .zip package:
 
 If you want to run this without installing, in point 6. of [Build](#Build) you can instead run the program using `npm start`
 
+### <ins>Local Ichiran API prerequisite</ins>
+
+Run `ichiran-api` at `127.0.0.1:8080` before using japReader's reader. If the
+local API is unavailable or cannot analyze a copied text, japReader shows a
+safe failure message. It does not fall back to ichi.moe.
+
 
 
 # [![](images/logo/logo_32.png)](#-technical-information) Technical information

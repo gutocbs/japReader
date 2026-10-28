@@ -55,9 +55,7 @@ window.addEventListener("DOMContentLoaded", () => {
     return true;
   });
 
-  $("#app").html('Connecting to <span class="url">https://ichi.moe/</span>.');
-  $("#app").append("<br>");
-  $("#app").append("Please wait patiently...");
+  $("#app").html("Copy Japanese text to begin using japReader.");
 
   ipcRenderer.on("ichiConnected", () => {
     if (!ichiConnected) {
@@ -72,6 +70,19 @@ window.addEventListener("DOMContentLoaded", () => {
 
   ipcRenderer.on("parseNotification", () => {
     $("#app").html("Detecting words...");
+  });
+
+  const apiErrorMessages = {
+    unavailable: "The local API is unavailable.",
+    temporarilyUnavailable: "The API is temporarily unavailable.",
+    timeout: "The analysis took longer than expected.",
+    inputTooLarge: "The text is larger than the API accepts.",
+    analysisFailed: "The API could not analyze this text.",
+    unexpected: "An error occurred while processing the text.",
+  };
+
+  ipcRenderer.on("apiAnalysisError", (event, code) => {
+    $("#app").html(apiErrorMessages[code] || apiErrorMessages.unexpected);
   });
 
   ipcRenderer.on("ichiConnectionError", () => {

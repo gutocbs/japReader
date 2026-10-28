@@ -9,6 +9,8 @@ const {
   shell,
 } = require("electron");
 const { spawn } = require("child_process");
+const { adaptAnalyzeResponse } = require("./analysis/api-result-adapter");
+const { createLocalApiRouter } = require("./analysis/local-api-router");
 
 const tools = require("@tools");
 
@@ -22,6 +24,7 @@ if (require("electron-squirrel-startup")) return app.quit();
 let readerOnTop = false;
 let translationOnTop = false;
 let dictOnTop = false;
+let localApiRouter;
 
 function filterObjectKeys(unfilteredObj, allowedKeys) {
   const filtered = Object.keys(unfilteredObj)
@@ -213,14 +216,6 @@ const createBoxes = () => {
       readerBox.webContents.send("parseNotification");
     });
 
-    ipcMain.on("ichiConnected", () => {
-      readerBox.webContents.send("ichiConnected");
-    });
-
-    ipcMain.on("ichiConnectionError", () => {
-      readerBox.webContents.send("ichiConnectionError");
-    });
-
     ipcMain.on("sendParsedData", (event, words, fullText) => {
       readerBox.webContents.send("receiveParsedData", words, fullText);
     });
@@ -257,8 +252,19 @@ const createBoxes = () => {
       ichiBox.hide();
     });
 
+    localApiRouter = createLocalApiRouter({
+      adaptResponse: adaptAnalyzeResponse,
+      fetchImpl: fetch,
+      onSuccess: ({ words, fullText }) => {
+        readerBox.webContents.send("receiveParsedData", words, fullText);
+      },
+      onFailure: (code) => {
+        readerBox.webContents.send("apiAnalysisError", code);
+      },
+    });
+
     ipcMain.on("clipboardChanged", (event, text) => {
-      ichiBox.webContents.send("parseWithIchi", text);
+      localApiRouter.analyze(text);
     });
 
     const dictBox = createWindow("dict", {
@@ -460,4 +466,8 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("before-quit", () => {
+  localApiRouter?.dispose();
 });
