@@ -1,0 +1,21 @@
+{
+  "text": "猫が好きです。",
+  "chunks": [
+    {
+      "index": 0,
+      "start": 0,
+      "length": 7,
+      "text": "猫が好きです。",
+      "analysis": [
+        [
+          [
+            ["neko", { "text": "猫", "kana": "ねこ", "gloss": [{ "pos": "[n]", "gloss": "cat" }], "conj": [] }, []],
+            ["ga", { "text": "が", "kana": "が", "gloss": [{ "pos": "[prt]", "gloss": "subject marker" }], "conj": [] }, []],
+            ["suki", { "text": "好き", "kana": "すき", "gloss": [{ "pos": "[adj-na,n]", "gloss": "liking" }], "conj": [{ "reading": "好く 【すく】", "readok": true }] }, []],
+            ["desu", { "text": "です", "kana": "です", "gloss": [{ "pos": "[aux-v,cop]", "gloss": "be; is" }], "conj": [] }, []]
+          ]
+        ]
+      ]
+    }
+  ]
+}

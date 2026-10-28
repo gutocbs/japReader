@@ -1,0 +1,31 @@
+{
+  "text": "国際連合。猫。",
+  "chunks": [
+    {
+      "index": 1,
+      "start": 5,
+      "length": 2,
+      "text": "猫。",
+      "analysis": [
+        [
+          [
+            ["neko", { "alternative": [{ "text": "猫", "kana": "ねこ", "gloss": [{ "pos": "[n]", "gloss": "cat" }], "conj": [] }, { "text": "猫", "kana": "ねご", "gloss": [{ "pos": "[n]", "gloss": "incorrect alternative" }], "conj": [] }] }, []]
+          ]
+        ]
+      ]
+    },
+    {
+      "index": 0,
+      "start": 0,
+      "length": 5,
+      "text": "国際連合。",
+      "analysis": [
+        [
+          [
+            ["kokusairengou", { "text": "国際連合", "kana": "こくさいれんごう", "gloss": [{ "pos": "[n]", "gloss": "United Nations" }], "conj": [] }, []]
+          ]
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "text": "昨日は雨だった。",
+  "chunks": [
+    {
+      "index": 0,
+      "start": 0,
+      "length": 8,
+      "text": "昨日は雨だった。",
+      "analysis": [
+        [
+          [
+            ["kinou", { "text": "昨日", "kana": "きのう", "gloss": [{ "pos": "[adv,n]", "gloss": "yesterday" }], "conj": [] }, []],
+            ["wa", { "text": "は", "kana": "は", "gloss": [{ "pos": "[prt]", "gloss": "topic marker" }], "conj": [] }, []],
+            ["ame", { "text": "雨", "kana": "あめ", "gloss": [{ "pos": "[n]", "gloss": "rain" }], "conj": [] }, []],
+            ["datta", { "text": "だった", "kana": "だった", "gloss": [{ "pos": "[exp]", "gloss": "was" }], "conj": [{ "reading": "だ", "readok": true, "gloss": [{ "pos": "[aux-v,cop-da,cop]", "gloss": "be; is" }] }] }, []]
+          ]
+        ]
+      ]
+    }
+  ]
+}

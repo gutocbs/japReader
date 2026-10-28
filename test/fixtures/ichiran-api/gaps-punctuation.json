@@ -1,0 +1,26 @@
+{
+  "text": "「猫」…好き？",
+  "chunks": [
+    {
+      "index": 0,
+      "start": 0,
+      "length": 7,
+      "text": "「猫」…好き？",
+      "analysis": [
+        " \\\"",
+        [
+          [
+            ["neko", { "text": "猫", "kana": "ねこ", "gloss": [{ "pos": "[n]", "gloss": "cat <feline> & \"friend\"" }], "conj": [] }, []]
+          ]
+        ],
+        "\\\" …",
+        [
+          [
+            ["suki", { "text": "好き", "kana": "すき", "gloss": [{ "pos": "[adj-na,n]", "gloss": "liking", "info": "<usage> & \"note\"" }], "conj": [] }, []]
+          ]
+        ],
+        "?"
+      ]
+    }
+  ]
+}
