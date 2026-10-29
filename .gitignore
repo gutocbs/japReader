@@ -4,3 +4,4 @@ src/boxes/*/box_size.json
 .vscode
 /docs/superpowers/specs
 /docs/superpowers/plans
+*.log

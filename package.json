@@ -32,7 +32,7 @@
     "@electron-forge/maker-rpm": "7.11.1",
     "@electron-forge/maker-squirrel": "7.11.1",
     "@electron-forge/maker-zip": "7.11.1",
-    "electron": "41.1.1",
+    "electron": "41.10.6",
     "prettier": "3.8.1"
   },
   "repository": {
@@ -45,5 +45,9 @@
   "homepage": "https://github.com/marisukukise/japReader#readme",
   "_moduleAliases": {
     "@tools": "./src/tools.js"
+  },
+  "allowScripts": {
+    "electron@41.10.6": true,
+    "electron-winstaller@5.4.0": true
   }
 }
