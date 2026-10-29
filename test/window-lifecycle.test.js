@@ -6,7 +6,7 @@ const test = require("node:test");
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
-const startApplicationWithMaximizedHiddenOptions = async () => {
+const startApplicationWithOptions = async (configuredOptions = {}) => {
   const windows = [];
   const ipcMain = new EventEmitter();
 
@@ -15,6 +15,7 @@ const startApplicationWithMaximizedHiddenOptions = async () => {
       super();
       this.config = config;
       this.maximizeCalls = 0;
+      this.alwaysOnTopCalls = [];
       this.webContents = { send: () => {} };
       windows.push(this);
     }
@@ -26,6 +27,12 @@ const startApplicationWithMaximizedHiddenOptions = async () => {
     hide() {}
 
     loadFile() {}
+
+    loadURL() {}
+
+    setAlwaysOnTop(value) {
+      this.alwaysOnTopCalls.push(value);
+    }
 
     maximize() {
       this.maximizeCalls += 1;
@@ -51,6 +58,7 @@ const startApplicationWithMaximizedHiddenOptions = async () => {
                 useDeepLApi: false,
                 useIchiMoeForShortText: false,
                 useReader: true,
+                ...configuredOptions,
               }
             : undefined,
       };
@@ -138,8 +146,7 @@ const startApplicationWithMaximizedHiddenOptions = async () => {
 };
 
 test("keeps restored maximized Options hidden until openOptions explicitly shows it", async () => {
-  const { ipcMain, windows } =
-    await startApplicationWithMaximizedHiddenOptions();
+  const { ipcMain, windows } = await startApplicationWithOptions();
   const optionsWindow = windows.find(
     (window) => window.config.identifier === "options",
   );
@@ -155,4 +162,29 @@ test("keeps restored maximized Options hidden until openOptions explicitly shows
 
   optionsWindow.show();
   assert.equal(optionsWindow.maximizeCalls, 1);
+});
+
+test("applies independent persisted always-on-top values and flips an enabled reader on its first shortcut", async () => {
+  const { ipcMain, windows } = await startApplicationWithOptions({
+    dictAlwaysOnTop: false,
+    readerAlwaysOnTop: true,
+    translationAlwaysOnTop: true,
+    useDeepL: true,
+  });
+  const readerWindow = windows.find(
+    (window) =>
+      window.config.height === 200 && window.config.closable === undefined,
+  );
+  const dictWindow = windows.find((window) => window.config.width === 400);
+  const translationWindow = windows.find(
+    (window) =>
+      window.config.height === 200 && window.config.closable === false,
+  );
+
+  assert.deepEqual(readerWindow.alwaysOnTopCalls, [true]);
+  assert.deepEqual(dictWindow.alwaysOnTopCalls, [false]);
+  assert.deepEqual(translationWindow.alwaysOnTopCalls, [true]);
+
+  ipcMain.emit("readerOnTop");
+  assert.deepEqual(readerWindow.alwaysOnTopCalls, [true, false]);
 });

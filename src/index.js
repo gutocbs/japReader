@@ -90,7 +90,14 @@ const {
   useIchiMoeForShortText,
   useReader,
   translationTransparent,
+  readerAlwaysOnTop,
+  dictAlwaysOnTop,
+  translationAlwaysOnTop,
 } = OPTIONS.get("options");
+
+readerOnTop = readerAlwaysOnTop;
+dictOnTop = dictAlwaysOnTop;
+translationOnTop = translationAlwaysOnTop;
 
 ipcMain.on("openExternal", (event, url) => {
   shell.openExternal(url);
@@ -202,6 +209,8 @@ const createBoxes = () => {
       },
     });
 
+    readerBox.setAlwaysOnTop(readerOnTop);
+
     readerBox.loadFile(tools.dirname_path("./boxes/reader/index.html"));
 
     readerBox.on("close", (e) => {
@@ -278,6 +287,8 @@ const createBoxes = () => {
       },
     });
 
+    dictBox.setAlwaysOnTop(dictOnTop);
+
     dictBox.loadFile(tools.dirname_path("./boxes/dict/index.html"));
 
     dictBox.on("close", (e) => {
@@ -352,6 +363,8 @@ const createBoxes = () => {
         nodeIntegration: true,
       },
     });
+
+    translationBox.setAlwaysOnTop(translationOnTop);
 
     if (translationTransparent)
       translationBox.loadFile(

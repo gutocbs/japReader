@@ -33,7 +33,9 @@ window.addEventListener("DOMContentLoaded", () => {
     fadeText,
     darkMode,
     leftClickDisregardStatus,
+    readerAlwaysOnTop,
   } = OPTIONS.get("options");
+  onTop = readerAlwaysOnTop;
 
   if (tvMode) document.body.classList.add("tv-mode");
   if (darkMode) {

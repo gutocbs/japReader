@@ -12,6 +12,14 @@ const invalidResponse = () => {
 const isObject = (value) =>
   value !== null && typeof value === "object" && !Array.isArray(value);
 
+const normalizeDigits = (value) =>
+  value.replace(/[０-９]/g, (digit) =>
+    String.fromCharCode(digit.charCodeAt(0) - 0xfee0),
+  );
+
+const hasEquivalentDigits = (left, right) =>
+  normalizeDigits(left) === normalizeDigits(right);
+
 const emptyWord = (word) => ({
   word,
   dictForm: "",
@@ -125,7 +133,13 @@ const adaptChunk = (chunk, expectedText) => {
   for (const candidate of candidates) {
     if (candidate.text.length === 0) invalidResponse();
 
-    while (offset < end && !expectedText.startsWith(candidate.text, offset)) {
+    while (
+      offset < end &&
+      !hasEquivalentDigits(
+        expectedText.slice(offset, offset + candidate.text.length),
+        candidate.text,
+      )
+    ) {
       const word = sourceCharacter(expectedText, offset);
       words.push(emptyWord(word));
       offset += word.length;
@@ -133,7 +147,10 @@ const adaptChunk = (chunk, expectedText) => {
 
     if (
       offset + candidate.text.length > end ||
-      !expectedText.startsWith(candidate.text, offset)
+      !hasEquivalentDigits(
+        expectedText.slice(offset, offset + candidate.text.length),
+        candidate.text,
+      )
     ) {
       invalidResponse();
     }
@@ -141,7 +158,7 @@ const adaptChunk = (chunk, expectedText) => {
     const root = dictionaryForm(candidate);
     const definitions = formatDefinitions(candidate.gloss);
     words.push({
-      word: candidate.text,
+      word: expectedText.slice(offset, offset + candidate.text.length),
       dictForm: root.dictForm,
       dictFormReading: root.dictFormReading,
       rubyReading: candidate.kana,
@@ -179,8 +196,10 @@ const validateChunks = (response, expectedText) => {
       chunk.length < 0 ||
       typeof chunk.text !== "string" ||
       chunk.text.length !== chunk.length ||
-      expectedText.slice(chunk.start, chunk.start + chunk.length) !==
-        chunk.text ||
+      !hasEquivalentDigits(
+        expectedText.slice(chunk.start, chunk.start + chunk.length),
+        chunk.text,
+      ) ||
       (chunk.analysis !== null && !Array.isArray(chunk.analysis))
     ) {
       invalidResponse();
@@ -196,7 +215,8 @@ const adaptAnalyzeResponse = (response, expectedText) => {
   if (
     !isObject(response) ||
     typeof expectedText !== "string" ||
-    response.text !== expectedText
+    typeof response.text !== "string" ||
+    !hasEquivalentDigits(response.text, expectedText)
   ) {
     invalidResponse();
   }

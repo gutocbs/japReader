@@ -154,6 +154,105 @@ test("emits placeholders for punctuation and gaps and escapes definitions", () =
   assert.doesNotMatch(words[1].definitions, /<feline>|& "friend"/);
 });
 
+test("adapts ASCII API digits onto the submitted full-width source text", () => {
+  const submittedText =
+    "１０分だけでも、何も考えない、全てを手放す時間を持ってみてください。";
+  const responseText =
+    "10分だけでも、何も考えない、全てを手放す時間を持ってみてください。";
+  const response = {
+    text: responseText,
+    chunks: [
+      {
+        index: 0,
+        start: 0,
+        length: responseText.length,
+        text: responseText,
+        analysis: [
+          [
+            [
+              [
+                "juppun",
+                {
+                  text: "10分",
+                  kana: "じゅっぷん",
+                  gloss: [{ pos: "[n]", gloss: "ten minutes" }],
+                  conj: [],
+                },
+                [],
+              ],
+            ],
+          ],
+        ],
+      },
+    ],
+  };
+
+  const result = adaptAnalyzeResponse(response, submittedText);
+
+  assert.equal(result.fullText, submittedText);
+  assert.deepEqual(result.words[0], {
+    word: "１０分",
+    dictForm: "10分",
+    dictFormReading: "じゅっぷん",
+    rubyReading: "じゅっぷん",
+    definitions:
+      '<div class="ichiran-definition"><div class="ichiran-gloss"><span class="ichiran-pos">[n]</span><span class="ichiran-gloss-text">ten minutes</span></div></div>',
+  });
+  assert.deepEqual(
+    result.words.slice(1).map(({ word }) => word),
+    [...submittedText.slice("１０分".length)],
+  );
+});
+
+test("rejects a same-length non-digit mismatch in a normalized response", () => {
+  const submittedText =
+    "１０分だけでも、何も考えない、全てを手放す時間を持ってみてください。";
+  const responseText =
+    "20分だけでも、何も考えない、全てを手放す時間を持ってみてください。";
+  const response = {
+    text: responseText,
+    chunks: [
+      {
+        index: 0,
+        start: 0,
+        length: responseText.length,
+        text: responseText,
+        analysis: [
+          [
+            [
+              [
+                "nijuppun",
+                {
+                  text: "20分",
+                  kana: "にじゅっぷん",
+                  gloss: [{ pos: "[n]", gloss: "twenty minutes" }],
+                  conj: [],
+                },
+                [],
+              ],
+            ],
+          ],
+        ],
+      },
+    ],
+  };
+
+  assert.throws(
+    () => adaptAnalyzeResponse(response, submittedText),
+    ApiResponseValidationError,
+  );
+});
+
+test("preserves validation errors for a non-string top-level response text", () => {
+  const response = fixture("simple.json");
+  response.text = null;
+
+  assert.throws(
+    () => adaptAnalyzeResponse(response, "猫が好きです。"),
+    ApiResponseValidationError,
+  );
+});
+
 test("rejects malformed envelopes without including response values", () => {
   const response = fixture("simple.json");
   response.text = "secret response content";
