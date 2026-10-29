@@ -10,11 +10,13 @@ const {
 
 test("configures Forge to verify the installed Electron Windows x64 ZIP locally", () => {
   const artifactName = `electron-v${electronPackage.version}-win32-x64.zip`;
+  const configuredChecksum =
+    forgeConfig.packagerConfig.download.checksums[artifactName];
+  const installedChecksum = electronChecksums[artifactName];
 
-  assert.equal(
-    forgeConfig.packagerConfig.download.checksums[artifactName],
-    electronChecksums[artifactName],
-  );
+  assert.match(configuredChecksum, /^[a-f0-9]{64}$/i);
+  assert.match(installedChecksum, /^[a-f0-9]{64}$/i);
+  assert.equal(configuredChecksum, installedChecksum);
 });
 
 test("accepts Node 24.22.1 for Forge build lifecycles", () => {
