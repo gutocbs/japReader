@@ -57,7 +57,11 @@ function createWindow(windowName, windowConfig) {
   }
 
   const mainWindow = new BrowserWindow(windowConfig);
-  if (windowConfig.isMaximized) mainWindow.maximize();
+  if (windowConfig.isMaximized) {
+    if (windowConfig.show === false)
+      mainWindow.once("show", () => mainWindow.maximize());
+    else mainWindow.maximize();
+  }
 
   // Events that will update the window position
   mainWindow.on("maximize", () => {
