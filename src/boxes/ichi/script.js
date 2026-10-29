@@ -1,11 +1,12 @@
 const { ipcRenderer } = require("electron");
+const { createIchiMoeUrl } = require("../../analysis/ichi-url");
 
 window.addEventListener("DOMContentLoaded", () => {
   // eslint-disable-next-line global-require
   const $ = require("jquery");
 
   ipcRenderer.on("parseWithIchi", (event, text) => {
-    document.location.href = `https://ichi.moe/cl/qr/?q=${text}&r=kana`;
+    document.location.href = createIchiMoeUrl(text);
   });
 
   const connectionCheck = setTimeout(() => {
