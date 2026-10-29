@@ -1,6 +1,9 @@
 module.exports = {
   packagerConfig: {
     icon: "./images/logo/icon",
+    download: {
+      checksums: require(require.resolve("electron/checksums.json")),
+    },
   },
   rebuildConfig: {},
   makers: [

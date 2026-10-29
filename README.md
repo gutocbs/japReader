@@ -79,7 +79,8 @@ Alternatively, if you don't want to install, you can download the .zip package:
 # [![](images/logo/logo_32.png)](#-build) Build
 <ol>
   <li>
-    Download and install <a href="https://nodejs.org/en/download/">node.js</a>
+    Download and install <a href="https://nodejs.org/en/download/">Node.js 24.22.1</a>
+    (the required development and build runtime)
   </li>
   <li>
     Clone the repository <code>git clone https://github.com/marisukukise/japReader.git</code>
@@ -99,7 +100,9 @@ Alternatively, if you don't want to install, you can download the .zip package:
   <li> The built files will be output in <code>out/make/</code> folder</li>
 </ol>
 
-If you want to run this without installing, in point 6. of [Build](#Build) you can instead run the program using `npm start`
+If you want to run this without installing, in point 6. of [Build](#Build) you
+can instead run the program using `npm start`. Use Node.js 24.22.1 for all
+development commands.
 
 ### <ins>Local Ichiran API prerequisite</ins>
 

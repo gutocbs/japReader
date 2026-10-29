@@ -6,7 +6,9 @@
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
+    "prepackage": "node scripts/build-runtime-preflight.js",
     "package": "electron-forge package",
+    "premake": "node scripts/build-runtime-preflight.js",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "test": "node --test",
@@ -15,6 +17,9 @@
   "keywords": [],
   "author": "marisukukise",
   "license": "GPL-3.0",
+  "engines": {
+    "node": "24.22.1"
+  },
   "config": {},
   "dependencies": {
     "clipboard-event": "1.6.0",
