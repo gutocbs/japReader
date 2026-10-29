@@ -14,13 +14,18 @@ const fixture = (name) =>
   );
 
 const assertChunkCoverage = (response) => {
-  const ordered = [...response.chunks].sort((left, right) => left.index - right.index);
+  const ordered = [...response.chunks].sort(
+    (left, right) => left.index - right.index,
+  );
   let offset = 0;
 
   for (const chunk of ordered) {
     assert.equal(chunk.start, offset);
     assert.equal(chunk.length, chunk.text.length);
-    assert.equal(response.text.slice(chunk.start, chunk.start + chunk.length), chunk.text);
+    assert.equal(
+      response.text.slice(chunk.start, chunk.start + chunk.length),
+      chunk.text,
+    );
     offset += chunk.length;
   }
 
@@ -67,7 +72,13 @@ test("adapts a simple API analysis into the reader word contract", () => {
       definitions:
         '<div class="ichiran-definition"><div class="ichiran-gloss"><span class="ichiran-pos">[aux-v,cop]</span><span class="ichiran-gloss-text">be; is</span></div></div>',
     },
-    { word: "。", dictForm: "", dictFormReading: "", rubyReading: "", definitions: "" },
+    {
+      word: "。",
+      dictForm: "",
+      dictFormReading: "",
+      rubyReading: "",
+      definitions: "",
+    },
   ]);
 });
 
@@ -135,7 +146,10 @@ test("emits placeholders for punctuation and gaps and escapes definitions", () =
     rubyReading: "",
     definitions: "",
   });
-  assert.match(words[1].definitions, /cat &lt;feline&gt; &amp; &quot;friend&quot;/);
+  assert.match(
+    words[1].definitions,
+    /cat &lt;feline&gt; &amp; &quot;friend&quot;/,
+  );
   assert.match(words[4].definitions, /&lt;usage&gt; &amp; &quot;note&quot;/);
   assert.doesNotMatch(words[1].definitions, /<feline>|& "friend"/);
 });

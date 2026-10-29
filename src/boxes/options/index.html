@@ -219,6 +219,30 @@ If you're learning Japanese, this option is good to select, because you can try 
             <label for="useReader">Use Japanese reader</label>
           </section>
 
+          <section id="analysis-source" class="analysis-source">
+            <div class="analysis-source-heading">Analysis source</div>
+            <div class="analysis-source-routes" aria-hidden="true">
+              <span class="analysis-route analysis-route-local">Local API</span>
+              <span class="analysis-route-default">all text</span>
+              <span class="analysis-route-branch">under 90</span>
+              <span class="analysis-route analysis-route-ichi">ichi.moe</span>
+            </div>
+            <div class="option">
+              <input
+                type="checkbox"
+                id="useIchiMoeForShortText"
+                name="useIchiMoeForShortText"
+              />
+              <label for="useIchiMoeForShortText"
+                >Use ichi.moe for short text</label
+              >
+            </div>
+            <p>
+              Sends text under 90 characters to ichi.moe. Longer text stays on
+              the local API.
+            </p>
+          </section>
+
           <section
             id="leftClickDisregardStatus-selection"
             class="option"

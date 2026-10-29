@@ -21,6 +21,7 @@ const schemaOptions = {
       translationTransparent: { default: true, type: "boolean" },
       translationFontSize: { default: 12, type: "number", minimum: 1 },
       useReader: { default: true, type: "boolean" },
+      useIchiMoeForShortText: { default: false, type: "boolean" },
       leftClickDisregardStatus: { default: false, type: "boolean" },
       addFuriganaNew: { default: true, type: "boolean" },
       addFuriganaSeen: { default: true, type: "boolean" },

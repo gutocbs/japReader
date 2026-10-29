@@ -189,6 +189,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 setTimeout(() => {
   if (document.body.children.length === 0) {
-    ipcRenderer.send("ichiConnectionError");
+    const fullText = new URL(document.location.href).searchParams.get("q");
+    ipcRenderer.send("ichiConnectionError", fullText);
   }
 }, 10000);

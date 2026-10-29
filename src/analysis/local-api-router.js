@@ -33,11 +33,18 @@ const createLocalApiRouter = ({
     if (activeController === controller) activeController = undefined;
   };
 
-  const analyze = (text) => {
+  const cancel = () => {
     if (disposed) return;
 
     generation += 1;
     activeController?.abort();
+    activeController = undefined;
+  };
+
+  const analyze = (text) => {
+    if (disposed) return;
+
+    cancel();
     const requestGeneration = generation;
     const controller = new AbortController();
     activeController = controller;
@@ -120,7 +127,7 @@ const createLocalApiRouter = ({
     activeController = undefined;
   };
 
-  return { analyze, dispose };
+  return { analyze, cancel, dispose };
 };
 
 module.exports = { createLocalApiRouter };

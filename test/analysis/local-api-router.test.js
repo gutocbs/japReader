@@ -24,13 +24,16 @@ const createHarness = (overrides = {}) => {
   const calls = [];
   const successes = [];
   const failures = [];
-  const fetchImpl = overrides.fetchImpl || ((url, options) => {
-    const request = deferred();
-    calls.push({ ...request, options, url });
-    return request.promise;
-  });
+  const fetchImpl =
+    overrides.fetchImpl ||
+    ((url, options) => {
+      const request = deferred();
+      calls.push({ ...request, options, url });
+      return request.promise;
+    });
   const adaptResponse =
-    overrides.adaptResponse || ((response, text) => ({ words: response.words, fullText: text }));
+    overrides.adaptResponse ||
+    ((response, text) => ({ words: response.words, fullText: text }));
   const router = createLocalApiRouter({
     adaptResponse,
     fetchImpl,
@@ -74,21 +77,27 @@ test("uses the reader callback contract for successful and failed analyses", asy
     "unexpected",
   ]);
 
-  await t.test("publishes the exact reader result shape on success", async () => {
-    const { calls, router, successes } = createHarness({
-      adaptResponse: () => ({ words: readerWords, fullText: "猫です" }),
-    });
+  await t.test(
+    "publishes the exact reader result shape on success",
+    async () => {
+      const { calls, router, successes } = createHarness({
+        adaptResponse: () => ({ words: readerWords, fullText: "猫です" }),
+      });
 
-    router.analyze("猫です");
-    calls[0].resolve(successfulResponse({ ignored: true }));
-    await flush();
-    await flush();
+      router.analyze("猫です");
+      calls[0].resolve(successfulResponse({ ignored: true }));
+      await flush();
+      await flush();
 
-    assert.deepEqual(successes, [{ words: readerWords, fullText: "猫です" }]);
-  });
+      assert.deepEqual(successes, [{ words: readerWords, fullText: "猫です" }]);
+    },
+  );
 
   const failures = [
-    ["unavailable", (request) => request.reject(new Error("connection refused"))],
+    [
+      "unavailable",
+      (request) => request.reject(new Error("connection refused")),
+    ],
     ["temporarilyUnavailable", (request) => request.resolve({ status: 503 })],
     ["timeout", (request) => request.resolve({ status: 504 })],
     ["inputTooLarge", (request) => request.resolve({ status: 413 })],
@@ -97,16 +106,19 @@ test("uses the reader callback contract for successful and failed analyses", asy
   ];
 
   for (const [expectedCode, completeRequest] of failures) {
-    await t.test(`publishes only the ${expectedCode} failure code`, async () => {
-      const { calls, failures: receivedCodes, router } = createHarness();
+    await t.test(
+      `publishes only the ${expectedCode} failure code`,
+      async () => {
+        const { calls, failures: receivedCodes, router } = createHarness();
 
-      router.analyze("猫です");
-      completeRequest(calls[0]);
-      await flush();
+        router.analyze("猫です");
+        completeRequest(calls[0]);
+        await flush();
 
-      assert.deepEqual(receivedCodes, [expectedCode]);
-      assert.equal(acceptedFailureCodes.has(receivedCodes[0]), true);
-    });
+        assert.deepEqual(receivedCodes, [expectedCode]);
+        assert.equal(acceptedFailureCodes.has(receivedCodes[0]), true);
+      },
+    );
   }
 });
 
@@ -195,4 +207,21 @@ test("dispose aborts active work and suppresses late results and future callback
   assert.deepEqual(successes, []);
   assert.deepEqual(failures, []);
   assert.equal(calls.length, 1);
+});
+
+test("cancel aborts active work and keeps the router reusable", async () => {
+  const { calls, failures, router, successes } = createHarness();
+
+  router.analyze("before cancel");
+  router.cancel();
+  assert.equal(calls[0].options.signal.aborted, true);
+
+  calls[0].resolve(successfulResponse({ words: ["stale"] }));
+  router.analyze("after cancel");
+  calls[1].resolve(successfulResponse({ words: ["fresh"] }));
+  await flush();
+  await flush();
+
+  assert.deepEqual(failures, []);
+  assert.deepEqual(successes, [{ words: ["fresh"], fullText: "after cancel" }]);
 });

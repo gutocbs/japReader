@@ -10,8 +10,11 @@ const {
 } = require("electron");
 const { spawn } = require("child_process");
 const {
+  createOptionalIchiMoeWindow,
+  createReaderAnalysisCoordinator,
   createReaderAnalysisRouter,
   registerDeepLClipboardDispatch,
+  registerIchiAnalysisEvents,
   registerReaderClipboardAnalysis,
 } = require("./analysis/electron-analysis-composition");
 
@@ -77,8 +80,13 @@ function createWindow(windowName, windowConfig) {
   return mainWindow;
 }
 
-const { useDeepL, useDeepLApi, useReader, translationTransparent } =
-  OPTIONS.get("options");
+const {
+  useDeepL,
+  useDeepLApi,
+  useIchiMoeForShortText,
+  useReader,
+  translationTransparent,
+} = OPTIONS.get("options");
 
 ipcMain.on("openExternal", (event, url) => {
   shell.openExternal(url);
@@ -220,10 +228,6 @@ const createBoxes = () => {
       readerBox.webContents.send("parseNotification");
     });
 
-    ipcMain.on("sendParsedData", (event, words, fullText) => {
-      readerBox.webContents.send("receiveParsedData", words, fullText);
-    });
-
     ipcMain.on("refreshReader", () => {
       readerBox.webContents.send("refreshReader");
     });
@@ -235,33 +239,27 @@ const createBoxes = () => {
       readerBox.setAlwaysOnTop(readerOnTop);
     });
 
-    const ichiBox = new BrowserWindow({
-      icon: "images/logo/icon.png",
-      show: false,
-      width: 800,
-      height: 600,
-      autoHideMenuBar: true,
-      webPreferences: {
-        contextIsolation: true,
-        enableRemoteModule: false,
-        preload: tools.dirname_path("./boxes/ichi/script.js"),
-        nodeIntegration: true,
-      },
-    });
-
-    ichiBox.loadURL("https://ichi.moe/cl/qr/?q=&r=kana");
-
-    ichiBox.on("close", (e) => {
-      e.preventDefault();
-      ichiBox.hide();
-    });
-
     localApiRouter = createReaderAnalysisRouter({
       fetchImpl: fetch,
       readerBox,
     });
 
-    registerReaderClipboardAnalysis(ipcMain, localApiRouter);
+    const ichiBox = createOptionalIchiMoeWindow({
+      BrowserWindow,
+      enabled: useIchiMoeForShortText,
+      tools,
+    });
+    const analysisCoordinator = createReaderAnalysisCoordinator({
+      apiRouter: localApiRouter,
+      readerBox,
+      requestIchiAnalysis: ichiBox
+        ? (text) => ichiBox.webContents.send("parseWithIchi", text)
+        : undefined,
+      useIchiMoeForShortText,
+    });
+
+    registerReaderClipboardAnalysis(ipcMain, analysisCoordinator);
+    if (ichiBox) registerIchiAnalysisEvents(ipcMain, analysisCoordinator);
 
     const dictBox = createWindow("dict", {
       icon: "images/logo/icon.png",

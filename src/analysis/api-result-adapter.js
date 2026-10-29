@@ -179,7 +179,8 @@ const validateChunks = (response, expectedText) => {
       chunk.length < 0 ||
       typeof chunk.text !== "string" ||
       chunk.text.length !== chunk.length ||
-      expectedText.slice(chunk.start, chunk.start + chunk.length) !== chunk.text ||
+      expectedText.slice(chunk.start, chunk.start + chunk.length) !==
+        chunk.text ||
       (chunk.analysis !== null && !Array.isArray(chunk.analysis))
     ) {
       invalidResponse();

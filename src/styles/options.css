@@ -216,6 +216,70 @@ section#apply {
   margin: 0;
 }
 
+#analysis-source {
+  display: block;
+  max-width: 24em;
+  margin: 0.4em 0.2em 0.7em;
+  padding: 0.45em 0.6em;
+  border: 1px solid var(--statusIgnored);
+  color: var(--mainFont);
+  background: var(--mainBackground);
+}
+
+.analysis-source-heading {
+  margin-bottom: 0.25em;
+  font-weight: bold;
+}
+
+.analysis-source-routes {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  margin-bottom: 0.35em;
+  font-size: 0.85em;
+}
+
+.analysis-route {
+  padding: 0.15em 0.35em;
+  border: 1px solid currentColor;
+}
+
+.analysis-route-local {
+  color: var(--statusNew);
+}
+
+.analysis-route-branch,
+.analysis-route-ichi {
+  color: var(--statusIgnored);
+}
+
+.analysis-route-default {
+  color: var(--statusNew);
+}
+
+.analysis-source:has(#useIchiMoeForShortText:checked) .analysis-route-branch,
+.analysis-source:has(#useIchiMoeForShortText:checked) .analysis-route-ichi {
+  color: var(--statusSeen);
+}
+
+#analysis-source p {
+  margin: 0.3em 0 0;
+  font-size: 0.85em;
+}
+
+#analysis-source .option input[type="checkbox"] {
+  display: block;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+#analysis-source .option input[type="checkbox"]:focus-visible + label:before {
+  outline: 2px solid var(--mainFont);
+  outline-offset: 2px;
+}
+
 /* section#deepLTargetNode-selection, section#deepLSourceNode-selection {
   flex-direction: row;
 } */
