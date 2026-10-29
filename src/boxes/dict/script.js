@@ -34,7 +34,9 @@ window.addEventListener("DOMContentLoaded", () => {
     ankiDefinitions,
     ankiJapanese,
     ankiEnglish,
+    dictAlwaysOnTop,
   } = OPTIONS.get("options");
+  onTop = dictAlwaysOnTop;
   if (darkMode) {
     document.documentElement.classList.add("dark-mode");
   }

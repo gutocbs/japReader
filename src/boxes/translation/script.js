@@ -28,7 +28,9 @@ window.addEventListener("DOMContentLoaded", () => {
     fontFamily,
     translationTransparent,
     darkMode,
+    translationAlwaysOnTop,
   } = OPTIONS.get("options");
+  onTop = translationAlwaysOnTop;
   if (darkMode) {
     document.documentElement.classList.add("dark-mode");
   }

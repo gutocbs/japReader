@@ -28,3 +28,30 @@ test("analysis source option defaults to local API and exposes the approved Opti
     /Sends text under 90 characters to ichi\.moe\. Longer text stays on the local API\./,
   );
 });
+
+test("always-on-top options use independent false defaults and expose their approved controls", () => {
+  const schema = tools.getOptionsStoreOptions().schema;
+  const markup = fs.readFileSync(
+    path.join(__dirname, "../../src/boxes/options/index.html"),
+    "utf8",
+  );
+
+  const options = [
+    ["readerAlwaysOnTop", "Keep reader always on top", "reader"],
+    ["dictAlwaysOnTop", "Keep dictionary always on top", "reader"],
+    ["translationAlwaysOnTop", "Keep translation always on top", "translation"],
+  ];
+
+  for (const [property, label, fieldset] of options) {
+    assert.deepEqual(schema.options.properties[property], {
+      default: false,
+      type: "boolean",
+    });
+    assert.match(
+      markup,
+      new RegExp(
+        `<fieldset id="${fieldset}">[\\s\\S]*?<input[^>]+id="${property}"[^>]+name="${property}"[\\s\\S]*?<label for="${property}"\\s*>${label}</label\\s*>`,
+      ),
+    );
+  }
+});
