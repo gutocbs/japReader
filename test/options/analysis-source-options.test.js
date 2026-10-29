@@ -38,7 +38,7 @@ test("always-on-top options use independent false defaults and expose their appr
 
   const options = [
     ["readerAlwaysOnTop", "Keep reader always on top", "reader"],
-    ["dictAlwaysOnTop", "Keep dictionary always on top", "reader"],
+    ["dictAlwaysOnTop", "Keep dictionary always on top", "dictionary"],
     ["translationAlwaysOnTop", "Keep translation always on top", "translation"],
   ];
 
