@@ -34,7 +34,7 @@ test("keeps every Electron Forge package on one exact version", () => {
     (packageName) => packageJson.devDependencies[packageName],
   );
 
-  assert.deepEqual([...new Set(forgeVersions)], ["7.11.1"]);
+  assert.deepEqual([...new Set(forgeVersions)], ["7.11.2"]);
   forgePackages.forEach((packageName) => {
     assert.equal(typeof packageJson.devDependencies[packageName], "string");
   });
