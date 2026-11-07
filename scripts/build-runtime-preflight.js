@@ -18,4 +18,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { assertSupportedBuildRuntime };
+module.exports = { assertSupportedBuildRuntime, requiredVersion };
