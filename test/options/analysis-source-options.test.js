@@ -29,6 +29,32 @@ test("analysis source option defaults to local API and exposes the approved Opti
   );
 });
 
+test("diagnostic recording is opt-in and warns that copied content is stored", () => {
+  const schema = tools.getOptionsStoreOptions().schema;
+  const markup = fs.readFileSync(
+    path.join(__dirname, "../../src/boxes/options/index.html"),
+    "utf8",
+  );
+  const normalizedMarkup = markup.replace(/\s+/g, " ");
+
+  assert.deepEqual(schema.options.properties.recordIchiranAnalysisDiagnostics, {
+    default: false,
+    type: "boolean",
+  });
+  assert.match(
+    markup,
+    /<input[^>]+id="recordIchiranAnalysisDiagnostics"[^>]+name="recordIchiranAnalysisDiagnostics"/,
+  );
+  assert.match(
+    markup,
+    /<label for="recordIchiranAnalysisDiagnostics"\s*>Record Ichiran analysis diagnostics<\/label\s*>/,
+  );
+  assert.match(
+    normalizedMarkup,
+    /Copied Japanese text and provider results are stored in the logs folder and may contain sensitive content\./,
+  );
+});
+
 test("always-on-top options use independent false defaults and expose their approved controls", () => {
   const schema = tools.getOptionsStoreOptions().schema;
   const markup = fs.readFileSync(

@@ -9,14 +9,17 @@ const {
   shell,
 } = require("electron");
 const { spawn } = require("child_process");
+const path = require("node:path");
 const {
   createOptionalIchiMoeWindow,
   createReaderAnalysisCoordinator,
   createReaderAnalysisRouter,
   registerDeepLClipboardDispatch,
   registerIchiAnalysisEvents,
+  registerReaderDictionaryDiagnosticEvents,
   registerReaderClipboardAnalysis,
 } = require("./analysis/electron-analysis-composition");
+const { createAnalysisLogWriter } = require("./analysis/analysis-log-writer");
 
 const tools = require("@tools");
 
@@ -93,7 +96,13 @@ const {
   readerAlwaysOnTop,
   dictAlwaysOnTop,
   translationAlwaysOnTop,
+  recordIchiranAnalysisDiagnostics,
 } = OPTIONS.get("options");
+
+const diagnostics = createAnalysisLogWriter({
+  enabled: recordIchiranAnalysisDiagnostics,
+  logsDirectory: path.dirname(HISTORY.path),
+});
 
 readerOnTop = readerAlwaysOnTop;
 dictOnTop = dictAlwaysOnTop;
@@ -253,6 +262,7 @@ const createBoxes = () => {
     });
 
     localApiRouter = createReaderAnalysisRouter({
+      diagnostics,
       fetchImpl: fetch,
       readerBox,
     });
@@ -264,6 +274,7 @@ const createBoxes = () => {
     });
     const analysisCoordinator = createReaderAnalysisCoordinator({
       apiRouter: localApiRouter,
+      diagnostics,
       readerBox,
       requestIchiAnalysis: ichiBox
         ? (text, context) =>
@@ -273,6 +284,7 @@ const createBoxes = () => {
     });
 
     registerReaderClipboardAnalysis(ipcMain, analysisCoordinator);
+    registerReaderDictionaryDiagnosticEvents(ipcMain, diagnostics);
     if (ichiBox) registerIchiAnalysisEvents(ipcMain, analysisCoordinator);
 
     const dictBox = createWindow("dict", {
@@ -480,4 +492,5 @@ app.on("window-all-closed", () => {
 
 app.on("before-quit", () => {
   localApiRouter?.dispose();
+  void diagnostics.close().catch(() => {});
 });

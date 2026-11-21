@@ -49,6 +49,7 @@ const startApplicationWithOptions = async (configuredOptions = {}) => {
   class FakeStore {
     constructor(options) {
       this.name = options.name;
+      this.path = `C:\\diagnostics\\${this.name}.json`;
       this.store = {
         options:
           this.name === "options"

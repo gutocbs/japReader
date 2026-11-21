@@ -25,6 +25,7 @@ const schemaOptions = {
       readerAlwaysOnTop: { default: false, type: "boolean" },
       dictAlwaysOnTop: { default: false, type: "boolean" },
       useIchiMoeForShortText: { default: false, type: "boolean" },
+      recordIchiranAnalysisDiagnostics: { default: false, type: "boolean" },
       leftClickDisregardStatus: { default: false, type: "boolean" },
       addFuriganaNew: { default: true, type: "boolean" },
       addFuriganaSeen: { default: true, type: "boolean" },
