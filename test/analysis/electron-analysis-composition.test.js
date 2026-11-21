@@ -8,6 +8,7 @@ const {
   createReaderAnalysisRouter,
   registerDeepLClipboardDispatch,
   registerIchiAnalysisEvents,
+  registerReaderDictionaryDiagnosticEvents,
   registerReaderClipboardAnalysis,
 } = require("../../src/analysis/electron-analysis-composition");
 
@@ -89,6 +90,29 @@ test("forwards API correlation metadata only with a successful reader result", a
   await flush();
 
   assert.deepEqual(messages, [["receiveParsedData", ["猫"], "猫", context]]);
+});
+
+test("records selected words and final dictionary HTML through dedicated IPC", () => {
+  const ipcMain = new EventEmitter();
+  const entries = [];
+  const context = {
+    provider: "api",
+    requestId: "request-1",
+    text: "育った",
+    wordIndex: 0,
+  };
+  const wordData = { definitions: "<div>definition</div>", word: "育った" };
+
+  registerReaderDictionaryDiagnosticEvents(ipcMain, {
+    record: (entry) => entries.push(entry),
+  });
+  ipcMain.emit("analysisWordSelected", {}, context, wordData);
+  ipcMain.emit("analysisDictionaryRendered", {}, context, wordData.definitions);
+
+  assert.deepEqual(entries, [
+    { ...context, event: "word.selected", wordData },
+    { ...context, event: "dictionary.rendered", html: wordData.definitions },
+  ]);
 });
 
 test("API-only composition creates no ichi.moe window and routes clipboard analysis locally", () => {

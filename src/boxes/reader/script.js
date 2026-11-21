@@ -2,6 +2,9 @@ require("module-alias/register");
 
 const { ipcRenderer } = require("electron");
 const { fit } = require("furigana");
+const {
+  sendSelectedWord,
+} = require("../../analysis/renderer-analysis-diagnostics");
 
 const tools = require("@tools");
 const Store = require("electron-store");
@@ -11,6 +14,7 @@ const STATUS_DATA = new Store(tools.getStatusDataStoreOptions());
 
 let currentWords = [];
 let currentText = "";
+let currentAnalysisContext;
 
 window.addEventListener("DOMContentLoaded", () => {
   // eslint-disable-next-line global-require
@@ -129,10 +133,10 @@ window.addEventListener("DOMContentLoaded", () => {
     ipcRenderer.send("refreshReader");
   };
 
-  const changeStatusOnClick = (wordData, newStatus) => {
+  const changeStatusOnClick = (wordData, wordIndex, newStatus) => {
     changeStatus(wordData.dictForm, wordData.status, newStatus);
     wordData.status = newStatus;
-    ipcRenderer.send("sendWordData", wordData);
+    sendSelectedWord(ipcRenderer, currentAnalysisContext, wordIndex, wordData);
     ipcRenderer.send("openDict");
   };
 
@@ -187,7 +191,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     const { known, seen, ignored } = STATUS_DATA.get("status_data");
 
-    words.forEach((wordData) => {
+    words.forEach((wordData, wordIndex) => {
       const currentWordData = wordData;
 
       if (currentWordData.definitions) {
@@ -259,22 +263,27 @@ window.addEventListener("DOMContentLoaded", () => {
             case 1: // LeftClick
               if (e.ctrlKey) {
                 // + Ctrl
-                changeStatusOnClick(currentWordData, "ignored");
+                changeStatusOnClick(currentWordData, wordIndex, "ignored");
               } else {
                 if (leftClickDisregardStatus) {
-                  changeStatusOnClick(currentWordData, "seen");
+                  changeStatusOnClick(currentWordData, wordIndex, "seen");
                 } else {
                   if (currentWordData.status == "new") {
                     changeStatusOnClick(currentWordData, "seen");
                   } else {
-                    ipcRenderer.send("sendWordData", wordData);
+                    sendSelectedWord(
+                      ipcRenderer,
+                      currentAnalysisContext,
+                      wordIndex,
+                      wordData,
+                    );
                     ipcRenderer.send("openDict");
                   }
                 }
               }
               break;
             case 3: // RightClick
-              changeStatusOnClick(currentWordData, "known");
+              changeStatusOnClick(currentWordData, wordIndex, "known");
               break;
           }
           return true;
@@ -325,9 +334,10 @@ window.addEventListener("DOMContentLoaded", () => {
     );
   });
 
-  ipcRenderer.on("receiveParsedData", (event, words, fullText) => {
+  ipcRenderer.on("receiveParsedData", (event, words, fullText, context) => {
     currentWords = words;
     currentText = fullText;
+    currentAnalysisContext = context;
     if (!useDeepL) ipcRenderer.send("appendToHistory", currentText, null);
     handleWords(currentWords);
   });

@@ -309,8 +309,8 @@ const createBoxes = () => {
       dictBox.setAlwaysOnTop(dictOnTop);
     });
 
-    ipcMain.on("sendWordData", (event, wordData) => {
-      dictBox.webContents.send("receiveWordData", wordData);
+    ipcMain.on("sendWordData", (event, wordData, selectionContext) => {
+      dictBox.webContents.send("receiveWordData", wordData, selectionContext);
     });
 
     ipcMain.on("sendTranslation", (event, englishText) => {

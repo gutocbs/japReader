@@ -77,6 +77,23 @@ const registerIchiAnalysisEvents = (ipcMain, coordinator) => {
   });
 };
 
+const registerReaderDictionaryDiagnosticEvents = (ipcMain, diagnostics) => {
+  ipcMain.on("analysisWordSelected", (event, selectionContext, wordData) => {
+    diagnostics.record({
+      ...selectionContext,
+      event: "word.selected",
+      wordData,
+    });
+  });
+  ipcMain.on("analysisDictionaryRendered", (event, selectionContext, html) => {
+    diagnostics.record({
+      ...selectionContext,
+      event: "dictionary.rendered",
+      html,
+    });
+  });
+};
+
 const createOptionalIchiMoeWindow = ({ BrowserWindow, enabled, tools }) => {
   if (!enabled) return undefined;
 
@@ -115,5 +132,6 @@ module.exports = {
   createReaderAnalysisRouter,
   registerDeepLClipboardDispatch,
   registerIchiAnalysisEvents,
+  registerReaderDictionaryDiagnosticEvents,
   registerReaderClipboardAnalysis,
 };

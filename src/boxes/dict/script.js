@@ -1,6 +1,9 @@
 require("module-alias/register");
 
 const { ipcRenderer } = require("electron");
+const {
+  sendRenderedDictionary,
+} = require("../../analysis/renderer-analysis-diagnostics");
 const tools = require("@tools");
 const Store = require("electron-store");
 
@@ -575,8 +578,13 @@ window.addEventListener("DOMContentLoaded", () => {
     $("#dict").html(currentWordData.definitions);
   };
 
-  ipcRenderer.on("receiveWordData", (event, wordData) => {
+  ipcRenderer.on("receiveWordData", (event, wordData, selectionContext) => {
     handleWordData(wordData);
+    sendRenderedDictionary(
+      ipcRenderer,
+      selectionContext,
+      document.querySelector("#dict").innerHTML,
+    );
     ipcRenderer.send("requestTranslation");
   });
 
