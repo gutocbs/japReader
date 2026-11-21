@@ -269,7 +269,7 @@ window.addEventListener("DOMContentLoaded", () => {
                   changeStatusOnClick(currentWordData, wordIndex, "seen");
                 } else {
                   if (currentWordData.status == "new") {
-                    changeStatusOnClick(currentWordData, "seen");
+                    changeStatusOnClick(currentWordData, wordIndex, "seen");
                   } else {
                     sendSelectedWord(
                       ipcRenderer,

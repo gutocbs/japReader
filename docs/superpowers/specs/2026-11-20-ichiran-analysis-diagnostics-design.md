@@ -154,6 +154,8 @@ described below.
 - `word.selected`: selected word index and the actual clicked `wordData`.
 - `dictionary.rendered`: the final HTML present in `#dict` after applying
   `wordData.definitions`.
+- `dictionary.renderFailed`: a dictionary-rendering exception, recorded with
+  its name and message after `word.selected` when rendering cannot complete.
 - `analysis.failed`: failure stage, safe failure code, optional HTTP status, and
   elapsed duration.
 - `analysis.cancelled`: cancellation caused by a newer accepted clipboard
@@ -180,7 +182,9 @@ The response is the parsed JSON before `adaptAnalyzeResponse` changes it. The
 subsequent `transformation.completed` event contains the complete `{ words,
 fullText }` reader result. HTTP failures record the status and mapped safe
 failure code, but do not read or log the Problem Details body. Headers, raw
-errors, and stacks are excluded.
+errors, and stacks are excluded. Dictionary rendering failures instead record
+only a structured exception name and message; they do not record raw error
+objects or stacks.
 
 ### `ichi.moe` response
 

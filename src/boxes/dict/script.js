@@ -2,6 +2,7 @@ require("module-alias/register");
 
 const { ipcRenderer } = require("electron");
 const {
+  sendDictionaryRenderFailed,
   sendRenderedDictionary,
 } = require("../../analysis/renderer-analysis-diagnostics");
 const tools = require("@tools");
@@ -579,13 +580,18 @@ window.addEventListener("DOMContentLoaded", () => {
   };
 
   ipcRenderer.on("receiveWordData", (event, wordData, selectionContext) => {
-    handleWordData(wordData);
-    sendRenderedDictionary(
-      ipcRenderer,
-      selectionContext,
-      document.querySelector("#dict").innerHTML,
-    );
-    ipcRenderer.send("requestTranslation");
+    try {
+      handleWordData(wordData);
+      sendRenderedDictionary(
+        ipcRenderer,
+        selectionContext,
+        document.querySelector("#dict").innerHTML,
+      );
+      ipcRenderer.send("requestTranslation");
+    } catch (error) {
+      sendDictionaryRenderFailed(ipcRenderer, selectionContext, error);
+      throw error;
+    }
   });
 
   ipcRenderer.on("receiveTranslation", (event, englishText) => {

@@ -15,4 +15,23 @@ const sendRenderedDictionary = (ipcRenderer, selectionContext, html) => {
   ipcRenderer.send("analysisDictionaryRendered", selectionContext, html);
 };
 
-module.exports = { sendRenderedDictionary, sendSelectedWord };
+const sendDictionaryRenderFailed = (ipcRenderer, selectionContext, error) => {
+  if (!selectionContext) return;
+
+  const errorDetails = {
+    name: error?.name || "Error",
+    message: error?.message || String(error),
+  };
+
+  ipcRenderer.send(
+    "analysisDictionaryRenderFailed",
+    selectionContext,
+    errorDetails,
+  );
+};
+
+module.exports = {
+  sendDictionaryRenderFailed,
+  sendRenderedDictionary,
+  sendSelectedWord,
+};

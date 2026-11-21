@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+  sendDictionaryRenderFailed,
   sendRenderedDictionary,
   sendSelectedWord,
 } = require("../../src/analysis/renderer-analysis-diagnostics");
@@ -46,5 +47,33 @@ test("sends the final dictionary HTML with the selected word context", () => {
 
   assert.deepEqual(messages, [
     ["analysisDictionaryRendered", selectionContext, "<dl>育った</dl>"],
+  ]);
+});
+
+test("reports a dictionary rendering error with the selected word context", () => {
+  const messages = [];
+  const selectionContext = {
+    provider: "ichi",
+    requestId: "request-3",
+    text: "今では",
+    wordIndex: 0,
+  };
+  const error = new TypeError("Cannot read properties of null");
+
+  sendDictionaryRenderFailed(
+    { send: (...args) => messages.push(args) },
+    selectionContext,
+    error,
+  );
+
+  assert.deepEqual(messages, [
+    [
+      "analysisDictionaryRenderFailed",
+      selectionContext,
+      {
+        name: "TypeError",
+        message: "Cannot read properties of null",
+      },
+    ],
   ]);
 });

@@ -92,6 +92,16 @@ const registerReaderDictionaryDiagnosticEvents = (ipcMain, diagnostics) => {
       html,
     });
   });
+  ipcMain.on(
+    "analysisDictionaryRenderFailed",
+    (event, selectionContext, error) => {
+      diagnostics.record({
+        ...selectionContext,
+        event: "dictionary.renderFailed",
+        error,
+      });
+    },
+  );
 };
 
 const createOptionalIchiMoeWindow = ({ BrowserWindow, enabled, tools }) => {

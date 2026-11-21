@@ -92,7 +92,7 @@ test("forwards API correlation metadata only with a successful reader result", a
   assert.deepEqual(messages, [["receiveParsedData", ["猫"], "猫", context]]);
 });
 
-test("records selected words and final dictionary HTML through dedicated IPC", () => {
+test("records selected words, final dictionary HTML, and rendering errors through dedicated IPC", () => {
   const ipcMain = new EventEmitter();
   const entries = [];
   const context = {
@@ -108,10 +108,22 @@ test("records selected words and final dictionary HTML through dedicated IPC", (
   });
   ipcMain.emit("analysisWordSelected", {}, context, wordData);
   ipcMain.emit("analysisDictionaryRendered", {}, context, wordData.definitions);
+  ipcMain.emit("analysisDictionaryRenderFailed", {}, context, {
+    name: "TypeError",
+    message: "Cannot read properties of null",
+  });
 
   assert.deepEqual(entries, [
     { ...context, event: "word.selected", wordData },
     { ...context, event: "dictionary.rendered", html: wordData.definitions },
+    {
+      ...context,
+      event: "dictionary.renderFailed",
+      error: {
+        name: "TypeError",
+        message: "Cannot read properties of null",
+      },
+    },
   ]);
 });
 

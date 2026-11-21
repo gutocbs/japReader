@@ -15,7 +15,7 @@
 - Keep `recordIchiranAnalysisDiagnostics` disabled by default and preserve the existing Apply-and-restart Options behavior.
 - Write only `logs/ichiran-analysis.jsonl` and `logs/ichiran-analysis.previous.jsonl`; rotate at `10 * 1024 * 1024` UTF-8 bytes and retain one previous file.
 - Every persisted event has `schemaVersion: 1`, an ISO-8601 UTC `timestamp`, `requestId`, `provider`, `text`, and `event`.
-- Do not log full `ichi.moe` pages, scripts, cookies, request or response headers, raw errors, stacks, or API Problem Details bodies.
+- Do not log full `ichi.moe` pages, scripts, cookies, request or response headers, raw errors, stacks, or API Problem Details bodies. A dictionary rendering exception records only its name and message.
 - A diagnostic failure must never change provider selection, cancellation, failure mapping, reader IPC, dictionary output, or any other user-visible behavior.
 - Do not add a package dependency or change the public API, reader word-object fields, endpoint, automatic retry, or fallback behavior.
 - Keep DeepL, AnkiConnect, audio, external searches, and other network traffic outside this feature.
@@ -265,8 +265,8 @@ git commit -m "feat: capture correlated ichi.moe diagnostics"
 
 **Interfaces:**
 - Consumes from Tasks 2-3: public analysis context `{ requestId, provider, text }` received with parsed words.
-- Produces `sendSelectedWord(ipcRenderer, context, wordIndex, wordData)` and `sendRenderedDictionary(ipcRenderer, selectionContext, html)`.
-- Produces dedicated IPC events `analysisWordSelected(selectionContext, wordData)` and `analysisDictionaryRendered(selectionContext, html)`.
+- Produces `sendSelectedWord(ipcRenderer, context, wordIndex, wordData)`, `sendRenderedDictionary(ipcRenderer, selectionContext, html)`, and `sendDictionaryRenderFailed(ipcRenderer, selectionContext, error)`.
+- Produces dedicated IPC events `analysisWordSelected(selectionContext, wordData)`, `analysisDictionaryRendered(selectionContext, html)`, and `analysisDictionaryRenderFailed(selectionContext, errorDetails)`.
 
 - [ ] **Step 1: Write failing renderer helper tests**
 
@@ -301,6 +301,8 @@ Export `registerReaderDictionaryDiagnosticEvents(ipcMain, diagnostics)` from `el
 
 - `word.selected` with common context fields, `wordIndex`, and `wordData`;
 - `dictionary.rendered` with common context fields, `wordIndex`, and `html`.
+- `dictionary.renderFailed` with common context fields, `wordIndex`, and the
+  exception name and message.
 
 Extend the composition test to emit both channels and assert the exact records. Include a word containing the current simplified API `definitions` HTML and assert it is preserved byte-for-byte.
 
