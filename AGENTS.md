@@ -7,7 +7,7 @@ japReader is an Electron desktop reader for Japanese clipboard text. It presents
 ## Tech Stack
 
 - Node.js `24.22.1`, pinned by `package.json`, `.nvmrc`, and Volta.
-- Electron `41.10.6` with Electron Forge `7.11.1`; the codebase uses CommonJS.
+- Electron `41.10.7` with Electron Forge `7.11.2`; the codebase uses CommonJS.
 - `electron-store` for options, window state, status data, and history.
 - `clipboard-event`, `jquery`, `furigana`, and `deepl-node` for clipboard, UI, reading, and translation behavior.
 - Built-in `node:test`/`node:assert` tests and JSON fixtures under `test/`.
@@ -19,7 +19,7 @@ japReader is an Electron desktop reader for Japanese clipboard text. It presents
 
 Renderer pages live under `src/boxes/<name>/` with colocated HTML and preload/renderer scripts. Shared visual rules live under `src/styles/`; persisted schemas and store configuration live in `src/tools.js`.
 
-The analysis pipeline is isolated under `src/analysis/`: clipboard text enters the source coordinator, which selects the local API or optional ichi.moe path. The local router owns cancellation/latest-request behavior and adapts successful API responses into the existing reader contract before publishing them over IPC.
+The analysis pipeline is isolated under `src/analysis/`: clipboard text enters the source coordinator, which selects the local API or optional ichi.moe path. The local router owns cancellation/latest-request behavior and adapts successful API responses into the existing reader contract before publishing them over IPC. Optional diagnostics record the analysis lifecycle and renderer dictionary events as JSONL without changing the reader contract.
 
 ## Main Components
 
@@ -29,6 +29,8 @@ The analysis pipeline is isolated under `src/analysis/`: clipboard text enters t
 - `src/analysis/analysis-source-coordinator.js`: local API versus ichi.moe selection and stale-result suppression.
 - `src/analysis/api-result-adapter.js`: local API response validation and conversion to reader word objects.
 - `src/analysis/electron-analysis-composition.js`: bridges analysis modules to Electron windows and IPC.
+- `src/analysis/analysis-log-writer.js`: optional bounded JSONL diagnostic writer for analysis events.
+- `src/analysis/renderer-analysis-diagnostics.js` and `src/analysis/ichi-dom-snapshot.js`: renderer diagnostics and selected ichi.moe DOM capture.
 - `src/boxes/`: clipboard watcher and the options, reader, dictionary, translation, DeepL, and ichi.moe window code.
 - `forge.config.js` and `scripts/build-runtime-preflight.js`: packaging, makers, local Electron checksums, and the required build runtime.
 - `test/`: focused analysis, options, packaging, and window-lifecycle tests plus Ichiran API fixtures.
@@ -41,6 +43,7 @@ The analysis pipeline is isolated under `src/analysis/`: clipboard text enters t
 - Managed auxiliary windows start hidden, intercept `close` to hide, and open through explicit IPC. Persisted maximization for a hidden window is restored only when it is shown.
 - With `useIchiMoeForShortText` disabled, all text uses the local API. When enabled, JavaScript UTF-16 `text.length < 90` uses ichi.moe and longer text uses the API. Failures do not retry or switch sources.
 - Analysis is latest-request-wins: cancel superseded API work and ignore stale ichi.moe results or failures.
+- `recordIchiranAnalysisDiagnostics` is opt-in; its JSONL records can contain analyzed Japanese text and dictionary data, so preserve its event order and lifecycle correlation fields.
 - Keep the reader-facing failure codes and adapted word-object contract covered by focused tests.
 - Put behavioral tests in `test/**/*.test.js`; use fixtures from `test/fixtures/ichiran-api/` for API response shapes.
 - Treat `out/` and `node_modules/` as generated content; do not edit or commit them.
@@ -55,5 +58,6 @@ The analysis pipeline is isolated under `src/analysis/`: clipboard text enters t
 - Use Node.js `24.22.1` for install, start, test, package, and make commands. Do not bypass `scripts/build-runtime-preflight.js` or disable Electron checksum validation.
 - For packaging changes, separately verify `npm run package`, `npm run make`, and the expected artifacts under `out/make/`; unit tests alone do not prove packaging.
 - For window or Electron lifecycle changes, keep automated tests separate from bounded/manual runtime validation.
+- For diagnostic changes, preserve lifecycle terminal events and flush the writer before the app exits.
 - Preserve unrelated worktree changes and generated/user configuration. Do not edit files under the platform-specific japReader configuration directory as part of source changes.
 - Keep changes objective and consistent with existing code. Do not invent undocumented conventions or expand scope through opportunistic cleanup.

@@ -100,6 +100,19 @@ Alternatively, if you don't want to install, you can download the .zip package:
   <li> The built files will be output in <code>out/make/</code> folder</li>
 </ol>
 
+### <ins>Generating the Windows installer (.exe)</ins>
+
+From the repository root on Windows, with Node.js `24.22.1` installed, run:
+
+```powershell
+npm install
+npm run make
+```
+
+Electron Forge creates the installer in `out/make/squirrel.windows/x64/` with a
+name such as `japreader-x.y.z Setup.exe`. The `out/` directory is generated
+output and should not be committed.
+
 If you want to run this without installing, in point 6. of [Build](#Build) you
 can instead run the program using `npm start`. Use Node.js 24.22.1 for all
 development commands.
