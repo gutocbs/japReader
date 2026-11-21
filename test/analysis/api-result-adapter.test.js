@@ -39,47 +39,14 @@ test("adapts a simple API analysis into the reader word contract", () => {
   const result = adaptAnalyzeResponse(response, response.text);
 
   assert.equal(result.fullText, "猫が好きです。");
-  assert.deepEqual(result.words, [
-    {
-      word: "猫",
-      dictForm: "猫",
-      dictFormReading: "ねこ",
-      rubyReading: "ねこ",
-      definitions:
-        '<div class="ichiran-definition"><div class="ichiran-gloss"><span class="ichiran-pos">[n]</span><span class="ichiran-gloss-text">cat</span></div></div>',
-    },
-    {
-      word: "が",
-      dictForm: "が",
-      dictFormReading: "が",
-      rubyReading: "が",
-      definitions:
-        '<div class="ichiran-definition"><div class="ichiran-gloss"><span class="ichiran-pos">[prt]</span><span class="ichiran-gloss-text">subject marker</span></div></div>',
-    },
-    {
-      word: "好き",
-      dictForm: "好く",
-      dictFormReading: "すく",
-      rubyReading: "すき",
-      definitions:
-        '<div class="ichiran-definition"><div class="ichiran-gloss"><span class="ichiran-pos">[adj-na,n]</span><span class="ichiran-gloss-text">liking</span></div></div>',
-    },
-    {
-      word: "です",
-      dictForm: "です",
-      dictFormReading: "です",
-      rubyReading: "です",
-      definitions:
-        '<div class="ichiran-definition"><div class="ichiran-gloss"><span class="ichiran-pos">[aux-v,cop]</span><span class="ichiran-gloss-text">be; is</span></div></div>',
-    },
-    {
-      word: "。",
-      dictForm: "",
-      dictFormReading: "",
-      rubyReading: "",
-      definitions: "",
-    },
-  ]);
+  assert.deepEqual(
+    result.words.map(({ word }) => word),
+    ["猫", "が", "好き", "です", "。"],
+  );
+  assert.match(result.words[0].definitions, /class="ichiran-definition"/);
+  assert.match(result.words[2].definitions, /<dl class="alternatives">/);
+  assert.match(result.words[2].definitions, /<dt>好き 【すき】<\/dt>/);
+  assert.equal(result.words[4].definitions, "");
 });
 
 test("uses a conjugation root while preserving the surface reading", () => {
@@ -89,14 +56,17 @@ test("uses a conjugation root while preserving the surface reading", () => {
   const { words } = adaptAnalyzeResponse(response, response.text);
   const conjugated = words.at(-2);
 
-  assert.deepEqual(conjugated, {
-    word: "だった",
-    dictForm: "だ",
-    dictFormReading: "だ",
-    rubyReading: "だった",
-    definitions:
-      '<div class="ichiran-definition"><div class="ichiran-gloss"><span class="ichiran-pos">[exp]</span><span class="ichiran-gloss-text">was</span></div></div>',
-  });
+  assert.deepEqual(
+    { ...conjugated, definitions: undefined },
+    {
+      word: "だった",
+      dictForm: "だ",
+      dictFormReading: "だ",
+      rubyReading: "だった",
+      definitions: undefined,
+    },
+  );
+  assert.match(conjugated.definitions, /<dt>だった 【だった】<\/dt>/);
 });
 
 test("uses the selected conjugation gloss when the surface candidate has none", () => {
@@ -106,14 +76,106 @@ test("uses the selected conjugation gloss when the surface candidate has none", 
   const { words } = adaptAnalyzeResponse(response, response.text);
   const conjugated = words.at(-2);
 
-  assert.deepEqual(conjugated, {
-    word: "上げた",
-    dictForm: "上げる",
-    dictFormReading: "あげる",
-    rubyReading: "あげた",
-    definitions:
-      '<div class="ichiran-definition"><div class="ichiran-gloss"><span class="ichiran-pos">[v1,vt]</span><span class="ichiran-gloss-text">raise &lt;something&gt; &amp; &quot;up&quot;</span><span class="ichiran-info">usu. transitive</span></div></div>',
-  });
+  assert.deepEqual(
+    { ...conjugated, definitions: undefined },
+    {
+      word: "上げた",
+      dictForm: "上げる",
+      dictFormReading: "あげる",
+      rubyReading: "あげた",
+      definitions: undefined,
+    },
+  );
+  assert.match(
+    conjugated.definitions,
+    /raise &lt;something&gt; &amp; &quot;up&quot;/,
+  );
+});
+
+test("renders readok conjugations in the ichi.moe dictionary structure", () => {
+  const response = fixture("conjugation-gloss.json");
+  response.chunks[0].analysis[0][0][2][1].conj[0].prop = [
+    { pos: "v1", type: "Past (~ta)" },
+  ];
+  const { words } = adaptAnalyzeResponse(response, response.text);
+  const definitions = words.at(-2).definitions;
+
+  assert.match(
+    definitions,
+    /^<dl class="alternatives"><dt>上げた 【あげた】<\/dt>/,
+  );
+  assert.match(definitions, /<div class="conjugations">/);
+  assert.match(definitions, /<div class="conj-prop">/);
+  assert.match(
+    definitions,
+    /<span class="pos-desc">\[<span title="Ichidan verb">v1<\/span>\]<\/span>/,
+  );
+  assert.match(definitions, /<div class="conj-gloss">/);
+  assert.match(definitions, /<dt>上げる 【あげる】<\/dt>/);
+  assert.match(definitions, /<ol class="gloss-definitions"><li>/);
+  assert.match(definitions, /raise &lt;something&gt; &amp; &quot;up&quot;/);
+});
+
+test("renders every readok conjugation while keeping the first as dictionary form", () => {
+  const response = {
+    text: "書かせられた",
+    chunks: [
+      {
+        analysis: [
+          [
+            [
+              [
+                "kakaserareta",
+                {
+                  text: "書かせられた",
+                  kana: "かかせられた",
+                  conj: [
+                    {
+                      prop: [
+                        { pos: "v5k", type: "Passive" },
+                        { pos: "vt", type: "Causative" },
+                      ],
+                      reading: "書く 【かく】",
+                      readok: true,
+                      gloss: [{ pos: "[vt]", gloss: "to write" }],
+                    },
+                    {
+                      prop: [{ pos: "v5k", type: "Past (~ta)" }],
+                      reading: "書かせる 【かかせる】",
+                      readok: true,
+                      gloss: [{ pos: "[vt]", gloss: "to make write" }],
+                    },
+                  ],
+                },
+                [],
+              ],
+            ],
+          ],
+        ],
+        index: 0,
+        length: "書かせられた".length,
+        start: 0,
+        text: "書かせられた",
+      },
+    ],
+  };
+
+  const { words } = adaptAnalyzeResponse(response, response.text);
+  const word = words[0];
+
+  assert.equal(word.dictForm, "書く");
+  assert.equal(word.dictFormReading, "かく");
+  assert.match(
+    word.definitions,
+    /title="Godan verb with &#39;ku&#39; ending">v5k/,
+  );
+  assert.match(word.definitions, /title="transitive verb">vt/);
+  assert.equal(
+    (word.definitions.match(/class="conjugation"/g) || []).length,
+    2,
+  );
+  assert.match(word.definitions, /<dt>書く 【かく】<\/dt>/);
+  assert.match(word.definitions, /<dt>書かせる 【かかせる】<\/dt>/);
 });
 
 test("orders compound and alternative chunks by source offsets", () => {

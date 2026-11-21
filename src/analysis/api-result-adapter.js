@@ -36,6 +36,80 @@ const escapeHtml = (value) =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
+const partOfSpeechTitles = {
+  v1: "Ichidan verb",
+  v5k: "Godan verb with 'ku' ending",
+  v5t: "Godan verb with 'tsu' ending",
+  vi: "intransitive verb",
+  vt: "transitive verb",
+};
+
+const formatPartOfSpeech = (value) =>
+  escapeHtml(value).replace(/[A-Za-z0-9-]+/g, (tag) => {
+    const title = partOfSpeechTitles[tag];
+    return title ? `<span title="${escapeHtml(title)}">${tag}</span>` : tag;
+  });
+
+const formatGlossList = (glosses) => {
+  if (!Array.isArray(glosses) || glosses.length === 0) {
+    return '<ol class="gloss-definitions"></ol>';
+  }
+
+  const rows = glosses
+    .filter(
+      (gloss) =>
+        isObject(gloss) &&
+        typeof gloss.pos === "string" &&
+        typeof gloss.gloss === "string",
+    )
+    .map((gloss) => {
+      const info =
+        typeof gloss.info === "string"
+          ? ` <span class="gloss-info">${escapeHtml(gloss.info)}</span>`
+          : "";
+      return `<li><span class="pos-desc">${formatPartOfSpeech(gloss.pos)}</span> <span class="gloss-desc">${escapeHtml(gloss.gloss)}</span>${info}</li>`;
+    });
+
+  return `<ol class="gloss-definitions">${rows.join("")}</ol>`;
+};
+
+const formatConjugationDefinitions = (candidate) => {
+  if (!Array.isArray(candidate.conj)) return undefined;
+
+  const conjugations = candidate.conj.filter(
+    (entry) =>
+      isObject(entry) &&
+      entry.readok === true &&
+      typeof entry.reading === "string" &&
+      entry.reading.trim().length > 0,
+  );
+  if (conjugations.length === 0) return undefined;
+
+  const surfaceReading =
+    typeof candidate.reading === "string" && candidate.reading.trim().length > 0
+      ? candidate.reading.trim()
+      : `${candidate.text} 【${candidate.kana}】`;
+  const items = conjugations.map((conjugation) => {
+    const properties = Array.isArray(conjugation.prop)
+      ? conjugation.prop
+          .filter(
+            (property) =>
+              isObject(property) &&
+              typeof property.pos === "string" &&
+              typeof property.type === "string",
+          )
+          .map(
+            (property) =>
+              `<div class="conj-prop"><span class="pos-desc">[${formatPartOfSpeech(property.pos)}]</span> <span class="conj-type">${escapeHtml(property.type)}</span></div>`,
+          )
+          .join("")
+      : "";
+    return `<div class="conjugation">${properties}<div class="conj-gloss"><dl><dt>${escapeHtml(conjugation.reading.trim())}</dt><dd>${formatGlossList(conjugation.gloss)}</dd></dl></div></div>`;
+  });
+
+  return `<dl class="alternatives"><dt>${escapeHtml(surfaceReading)}</dt><dd>${formatGlossList(candidate.gloss)}<div class="conjugations">${items.join("")}</div></dd></dl>`;
+};
+
 const formatDefinitions = (glosses) => {
   if (!Array.isArray(glosses) || glosses.length === 0) return "";
 
@@ -156,7 +230,9 @@ const adaptChunk = (chunk, expectedText) => {
     }
 
     const root = dictionaryForm(candidate);
-    const definitions = formatDefinitions(candidate.gloss);
+    const definitions =
+      formatConjugationDefinitions(candidate) ||
+      formatDefinitions(candidate.gloss);
     words.push({
       word: expectedText.slice(offset, offset + candidate.text.length),
       dictForm: root.dictForm,
