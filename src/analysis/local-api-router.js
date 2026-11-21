@@ -25,6 +25,7 @@ const createLocalApiRouter = ({
   now = () => performance.now(),
 }) => {
   let activeController;
+  let activeRequest;
   let disposed = false;
   let generation = 0;
 
@@ -32,15 +33,27 @@ const createLocalApiRouter = ({
     !disposed && requestGeneration === generation;
 
   const complete = (controller) => {
-    if (activeController === controller) activeController = undefined;
+    if (activeController === controller) {
+      activeController = undefined;
+      activeRequest = undefined;
+    }
   };
 
   const cancel = () => {
     if (disposed) return;
 
+    if (activeRequest?.context) {
+      diagnostics.record({
+        ...activeRequest.context,
+        durationMs: now() - activeRequest.startedAt,
+        event: "analysis.cancelled",
+        reason: "superseded",
+      });
+    }
     generation += 1;
     activeController?.abort();
     activeController = undefined;
+    activeRequest = undefined;
   };
 
   const analyze = (text, context) => {
@@ -51,6 +64,28 @@ const createLocalApiRouter = ({
     const startedAt = now();
     const controller = new AbortController();
     activeController = controller;
+    activeRequest = { context, controller, startedAt };
+
+    const recordFailure = (stage, code, httpStatus) => {
+      if (!context) return;
+      diagnostics.record({
+        ...context,
+        code,
+        durationMs: now() - startedAt,
+        event: "analysis.failed",
+        ...(httpStatus === undefined ? {} : { httpStatus }),
+        stage,
+      });
+    };
+
+    const recordDiscarded = () => {
+      if (!context) return;
+      diagnostics.record({
+        ...context,
+        durationMs: now() - startedAt,
+        event: "analysis.discarded",
+      });
+    };
 
     let request;
     try {
@@ -63,6 +98,7 @@ const createLocalApiRouter = ({
     } catch {
       if (isCurrent(requestGeneration)) {
         complete(controller);
+        recordFailure("request", "unavailable");
         onFailure("unavailable");
       }
       return;
@@ -75,16 +111,24 @@ const createLocalApiRouter = ({
       } catch {
         if (isCurrent(requestGeneration)) {
           complete(controller);
+          recordFailure("request", "unavailable");
           onFailure("unavailable");
+        } else {
+          recordDiscarded();
         }
         return;
       }
 
-      if (!isCurrent(requestGeneration)) return;
+      if (!isCurrent(requestGeneration)) {
+        recordDiscarded();
+        return;
+      }
 
       if (response.status !== 200) {
         complete(controller);
-        onFailure(failureCodeForStatus(response.status));
+        const code = failureCodeForStatus(response.status);
+        recordFailure("response.status", code, response.status);
+        onFailure(code);
         return;
       }
 
@@ -94,12 +138,16 @@ const createLocalApiRouter = ({
       } catch {
         if (isCurrent(requestGeneration)) {
           complete(controller);
+          recordFailure("response.parse", "unexpected", response.status);
           onFailure("unexpected");
         }
         return;
       }
 
-      if (!isCurrent(requestGeneration)) return;
+      if (!isCurrent(requestGeneration)) {
+        recordDiscarded();
+        return;
+      }
 
       diagnostics.record({
         ...context,
@@ -114,6 +162,7 @@ const createLocalApiRouter = ({
       } catch {
         if (isCurrent(requestGeneration)) {
           complete(controller);
+          recordFailure("response.transform", "unexpected", response.status);
           onFailure("unexpected");
         }
         return;
@@ -141,6 +190,7 @@ const createLocalApiRouter = ({
     generation += 1;
     activeController?.abort();
     activeController = undefined;
+    activeRequest = undefined;
   };
 
   return { analyze, cancel, dispose };

@@ -8,12 +8,22 @@ const createReaderAnalysisRouter = ({
   readerBox,
   fetchImpl,
   adaptResponse = adaptAnalyzeResponse,
+  diagnostics,
 }) =>
   createLocalApiRouter({
     adaptResponse,
+    diagnostics,
     fetchImpl,
-    onSuccess: ({ words, fullText }) => {
-      readerBox.webContents.send("receiveParsedData", words, fullText);
+    onSuccess: ({ words, fullText }, context) => {
+      const message = ["receiveParsedData", words, fullText];
+      if (context) {
+        message.push({
+          provider: context.provider,
+          requestId: context.requestId,
+          text: context.text,
+        });
+      }
+      readerBox.webContents.send(...message);
     },
     onFailure: (code) => {
       readerBox.webContents.send("apiAnalysisError", code);
@@ -31,6 +41,9 @@ const createReaderAnalysisCoordinator = ({
   readerBox,
   requestIchiAnalysis,
   useIchiMoeForShortText,
+  diagnostics,
+  createRequestId,
+  now,
 }) =>
   createAnalysisSourceCoordinator({
     apiRouter,
@@ -40,6 +53,9 @@ const createReaderAnalysisCoordinator = ({
     onIchiSuccess: (words, fullText) => {
       readerBox.webContents.send("receiveParsedData", words, fullText);
     },
+    diagnostics,
+    createRequestId,
+    now,
     requestIchiAnalysis,
     useIchiMoeForShortText,
   });

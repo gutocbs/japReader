@@ -99,6 +99,45 @@ test("records the raw API response before the adapted reader result", async () =
   assert.equal(Number.isFinite(diagnostics[1].durationMs), true);
 });
 
+test("records cancellation, stale completion, and safe failure details", async () => {
+  const diagnostics = [];
+  const context = {
+    provider: "api",
+    requestId: "request-1",
+    text: "old",
+  };
+  const { calls, failures, router } = createHarness({
+    diagnostics: { record: (entry) => diagnostics.push(entry) },
+  });
+
+  router.analyze("old", context);
+  router.cancel();
+  calls[0].resolve(successfulResponse({ words: ["late"] }));
+  await flush();
+  await flush();
+
+  assert.deepEqual(failures, []);
+  assert.equal(diagnostics[0].event, "analysis.cancelled");
+  assert.equal(diagnostics[0].reason, "superseded");
+  assert.equal(diagnostics.at(-1).event, "analysis.discarded");
+
+  const failingContext = { ...context, requestId: "request-2", text: "bad" };
+  router.analyze("bad", failingContext);
+  calls[1].resolve({ status: 503 });
+  await flush();
+
+  assert.deepEqual(failures, ["temporarilyUnavailable"]);
+  assert.deepEqual(diagnostics.at(-1), {
+    ...failingContext,
+    code: "temporarilyUnavailable",
+    durationMs: diagnostics.at(-1).durationMs,
+    event: "analysis.failed",
+    httpStatus: 503,
+    stage: "response.status",
+  });
+  assert.equal(Number.isFinite(diagnostics.at(-1).durationMs), true);
+});
+
 test("uses the reader callback contract for successful and failed analyses", async (t) => {
   const readerWords = [{ word: "猫", rubyReading: "ねこ" }];
   const acceptedFailureCodes = new Set([

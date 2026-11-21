@@ -73,6 +73,24 @@ test("composes reader API callbacks and keeps DeepL clipboard dispatch independe
   assert.deepEqual(deepLMessages.at(-1), ["translateWithDeepL", "犬です"]);
 });
 
+test("forwards API correlation metadata only with a successful reader result", async () => {
+  const messages = [];
+  const request = deferred();
+  const router = createReaderAnalysisRouter({
+    adaptResponse: (body, text) => ({ words: body.words, fullText: text }),
+    fetchImpl: () => request.promise,
+    readerBox: { webContents: { send: (...args) => messages.push(args) } },
+  });
+  const context = { provider: "api", requestId: "request-1", text: "猫" };
+
+  router.analyze("猫", context);
+  request.resolve({ status: 200, json: async () => ({ words: ["猫"] }) });
+  await flush();
+  await flush();
+
+  assert.deepEqual(messages, [["receiveParsedData", ["猫"], "猫", context]]);
+});
+
 test("API-only composition creates no ichi.moe window and routes clipboard analysis locally", () => {
   const ipcMain = new EventEmitter();
   const messages = [];
