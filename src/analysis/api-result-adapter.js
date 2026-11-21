@@ -110,28 +110,23 @@ const formatConjugationDefinitions = (candidate) => {
   return `<dl class="alternatives"><dt>${escapeHtml(surfaceReading)}</dt><dd>${formatGlossList(candidate.gloss)}<div class="conjugations">${items.join("")}</div></dd></dl>`;
 };
 
-const formatDefinitions = (glosses) => {
-  if (!Array.isArray(glosses) || glosses.length === 0) return "";
-
-  const rows = glosses
-    .filter(
+const formatDefinitions = (candidate) => {
+  const glosses = candidate.gloss;
+  const hasGlosses =
+    Array.isArray(glosses) &&
+    glosses.some(
       (gloss) =>
         isObject(gloss) &&
         typeof gloss.pos === "string" &&
         typeof gloss.gloss === "string",
-    )
-    .map((gloss) => {
-      const info =
-        typeof gloss.info === "string"
-          ? `<span class="ichiran-info">${escapeHtml(gloss.info)}</span>`
-          : "";
+    );
+  if (!hasGlosses) return "";
 
-      return `<div class="ichiran-gloss"><span class="ichiran-pos">${escapeHtml(gloss.pos)}</span><span class="ichiran-gloss-text">${escapeHtml(gloss.gloss)}</span>${info}</div>`;
-    });
-
-  return rows.length === 0
-    ? ""
-    : `<div class="ichiran-definition">${rows.join("")}</div>`;
+  const reading =
+    typeof candidate.reading === "string" && candidate.reading.trim().length > 0
+      ? candidate.reading.trim()
+      : `${candidate.text} 【${candidate.kana}】`;
+  return `<dl class="alternatives"><dt>${escapeHtml(reading)}</dt><dd>${formatGlossList(glosses)}</dd></dl>`;
 };
 
 const isLexicalCandidate = (value) =>
@@ -231,14 +226,13 @@ const adaptChunk = (chunk, expectedText) => {
 
     const root = dictionaryForm(candidate);
     const definitions =
-      formatConjugationDefinitions(candidate) ||
-      formatDefinitions(candidate.gloss);
+      formatConjugationDefinitions(candidate) || formatDefinitions(candidate);
     words.push({
       word: expectedText.slice(offset, offset + candidate.text.length),
       dictForm: root.dictForm,
       dictFormReading: root.dictFormReading,
       rubyReading: candidate.kana,
-      definitions: definitions || formatDefinitions(root.gloss),
+      definitions,
     });
     offset += candidate.text.length;
   }

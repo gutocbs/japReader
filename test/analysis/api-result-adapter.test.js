@@ -43,10 +43,58 @@ test("adapts a simple API analysis into the reader word contract", () => {
     result.words.map(({ word }) => word),
     ["猫", "が", "好き", "です", "。"],
   );
-  assert.match(result.words[0].definitions, /class="ichiran-definition"/);
+  assert.match(result.words[0].definitions, /<dl class="alternatives">/);
+  assert.match(result.words[0].definitions, /<dt>猫 【ねこ】<\/dt>/);
   assert.match(result.words[2].definitions, /<dl class="alternatives">/);
   assert.match(result.words[2].definitions, /<dt>好き 【すき】<\/dt>/);
   assert.equal(result.words[4].definitions, "");
+});
+
+test("renders a non-conjugated verb in the ichi.moe dictionary structure", () => {
+  const response = {
+    text: "落ち着く",
+    chunks: [
+      {
+        analysis: [
+          [
+            [
+              [
+                "ochitsuku",
+                {
+                  text: "落ち着く",
+                  kana: "おちつく",
+                  gloss: [
+                    {
+                      pos: "[v5k,vi]",
+                      gloss: "to calm down; to compose oneself",
+                    },
+                    {
+                      pos: "[v5k,vi]",
+                      gloss: "to be unobtrusive; to be quiet",
+                      info: "usu. before a noun as 落ち着いた",
+                    },
+                  ],
+                  conj: [],
+                },
+                [],
+              ],
+            ],
+          ],
+        ],
+        index: 0,
+        length: "落ち着く".length,
+        start: 0,
+        text: "落ち着く",
+      },
+    ],
+  };
+
+  const { words } = adaptAnalyzeResponse(response, response.text);
+
+  assert.equal(
+    words[0].definitions,
+    '<dl class="alternatives"><dt>落ち着く 【おちつく】</dt><dd><ol class="gloss-definitions"><li><span class="pos-desc">[<span title="Godan verb with &#39;ku&#39; ending">v5k</span>,<span title="intransitive verb">vi</span>]</span> <span class="gloss-desc">to calm down; to compose oneself</span></li><li><span class="pos-desc">[<span title="Godan verb with &#39;ku&#39; ending">v5k</span>,<span title="intransitive verb">vi</span>]</span> <span class="gloss-desc">to be unobtrusive; to be quiet</span> <span class="gloss-info">usu. before a noun as 落ち着いた</span></li></ol></dd></dl>',
+  );
 });
 
 test("uses a conjugation root while preserving the surface reading", () => {
@@ -258,7 +306,7 @@ test("adapts ASCII API digits onto the submitted full-width source text", () => 
     dictFormReading: "じゅっぷん",
     rubyReading: "じゅっぷん",
     definitions:
-      '<div class="ichiran-definition"><div class="ichiran-gloss"><span class="ichiran-pos">[n]</span><span class="ichiran-gloss-text">ten minutes</span></div></div>',
+      '<dl class="alternatives"><dt>10分 【じゅっぷん】</dt><dd><ol class="gloss-definitions"><li><span class="pos-desc">[n]</span> <span class="gloss-desc">ten minutes</span></li></ol></dd></dl>',
   });
   assert.deepEqual(
     result.words.slice(1).map(({ word }) => word),
