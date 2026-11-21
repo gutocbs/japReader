@@ -97,6 +97,88 @@ test("renders a non-conjugated verb in the ichi.moe dictionary structure", () =>
   );
 });
 
+test("renders compound candidates from their components", () => {
+  const response = {
+    text: "なっています",
+    chunks: [
+      {
+        analysis: [
+          [
+            [
+              [
+                "natteimasu",
+                {
+                  reading: "なっています",
+                  text: "なっています",
+                  kana: "なっています",
+                  compound: ["なって", "います"],
+                  components: [
+                    {
+                      reading: "なって",
+                      text: "なって",
+                      kana: "なって",
+                      conj: [
+                        {
+                          prop: [{ pos: "v5r", type: "Conjunctive (~te)" }],
+                          reading: "成る 【なる】",
+                          gloss: [{ pos: "[v5r,vi]", gloss: "to become" }],
+                          readok: true,
+                        },
+                      ],
+                    },
+                    {
+                      reading: "います",
+                      text: "います",
+                      kana: "います",
+                      suffix: "indicates continuing action (to be ...ing)",
+                      conj: [
+                        {
+                          prop: [{ pos: "v1", type: "Non-past", fml: true }],
+                          reading: "居る 【いる】",
+                          gloss: [{ pos: "[v1,vi]", gloss: "to exist" }],
+                          readok: true,
+                        },
+                      ],
+                    },
+                  ],
+                },
+                [],
+              ],
+            ],
+          ],
+        ],
+        index: 0,
+        length: "なっています".length,
+        start: 0,
+        text: "なっています",
+      },
+    ],
+  };
+
+  const { words } = adaptAnalyzeResponse(response, response.text);
+  const word = words[0];
+
+  assert.equal(word.dictForm, "成る");
+  assert.equal(word.dictFormReading, "なる");
+  assert.match(
+    word.definitions,
+    /^<dl class="alternatives"><dt>なっています<\/dt>/,
+  );
+  assert.match(
+    word.definitions,
+    /<span class="compound-desc">Compound word: <span class="compound-desc-word">なって \+ います<\/span><\/span>/,
+  );
+  assert.match(word.definitions, /<dl class="compounds">/);
+  assert.match(word.definitions, /<dt>なって<\/dt>/);
+  assert.match(word.definitions, /Conjunctive \(~te\)/);
+  assert.match(word.definitions, /<dt>います<\/dt>/);
+  assert.match(
+    word.definitions,
+    /<span class="suffix-desc">\[indicates continuing action \(to be \.\.\.ing\)\]<\/span>/,
+  );
+  assert.match(word.definitions, /<span class="conj-formal">Formal<\/span>/);
+});
+
 test("uses a conjugation root while preserving the surface reading", () => {
   const response = fixture("conjugation.json");
   assertChunkCoverage(response);

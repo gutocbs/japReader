@@ -73,7 +73,7 @@ const formatGlossList = (glosses) => {
   return `<ol class="gloss-definitions">${rows.join("")}</ol>`;
 };
 
-const formatConjugationDefinitions = (candidate) => {
+const formatConjugations = (candidate) => {
   if (!Array.isArray(candidate.conj)) return undefined;
 
   const conjugations = candidate.conj.filter(
@@ -85,10 +85,6 @@ const formatConjugationDefinitions = (candidate) => {
   );
   if (conjugations.length === 0) return undefined;
 
-  const surfaceReading =
-    typeof candidate.reading === "string" && candidate.reading.trim().length > 0
-      ? candidate.reading.trim()
-      : `${candidate.text} 【${candidate.kana}】`;
   const items = conjugations.map((conjugation) => {
     const properties = Array.isArray(conjugation.prop)
       ? conjugation.prop
@@ -100,17 +96,67 @@ const formatConjugationDefinitions = (candidate) => {
           )
           .map(
             (property) =>
-              `<div class="conj-prop"><span class="pos-desc">[${formatPartOfSpeech(property.pos)}]</span> <span class="conj-type">${escapeHtml(property.type)}</span></div>`,
+              `<div class="conj-prop"><span class="pos-desc">[${formatPartOfSpeech(property.pos)}]</span> <span class="conj-type">${escapeHtml(property.type)}</span>${property.fml === true ? '<span class="conj-formal">Formal</span>' : ""}</div>`,
           )
           .join("")
       : "";
     return `<div class="conjugation">${properties}<div class="conj-gloss"><dl><dt>${escapeHtml(conjugation.reading.trim())}</dt><dd>${formatGlossList(conjugation.gloss)}</dd></dl></div></div>`;
   });
 
-  return `<dl class="alternatives"><dt>${escapeHtml(surfaceReading)}</dt><dd>${formatGlossList(candidate.gloss)}<div class="conjugations">${items.join("")}</div></dd></dl>`;
+  return `<div class="conjugations">${items.join("")}</div>`;
+};
+
+const formatConjugationDefinitions = (candidate) => {
+  const conjugations = formatConjugations(candidate);
+  if (!conjugations) return undefined;
+
+  const surfaceReading =
+    typeof candidate.reading === "string" && candidate.reading.trim().length > 0
+      ? candidate.reading.trim()
+      : `${candidate.text} 【${candidate.kana}】`;
+  return `<dl class="alternatives"><dt>${escapeHtml(surfaceReading)}</dt><dd>${formatGlossList(candidate.gloss)}${conjugations}</dd></dl>`;
+};
+
+const compoundComponents = (candidate) =>
+  Array.isArray(candidate.components)
+    ? candidate.components.filter(isLexicalCandidate)
+    : [];
+
+const formatCompoundDefinitions = (candidate) => {
+  const components = compoundComponents(candidate);
+  if (components.length === 0) return "";
+
+  const surfaceReading =
+    typeof candidate.reading === "string" && candidate.reading.trim().length > 0
+      ? candidate.reading.trim()
+      : `${candidate.text} 【${candidate.kana}】`;
+  const compoundWords = Array.isArray(candidate.compound)
+    ? candidate.compound.filter((word) => typeof word === "string")
+    : components.map((component) => component.text);
+  const entries = components
+    .map((component) => {
+      const reading =
+        typeof component.reading === "string" &&
+        component.reading.trim().length > 0
+          ? component.reading.trim()
+          : component.text;
+      const suffix =
+        typeof component.suffix === "string"
+          ? `<span class="suffix-desc">[${escapeHtml(component.suffix)}]</span>`
+          : "";
+      const definitions = suffix || formatGlossList(component.gloss);
+      const conjugations = formatConjugations(component) || "";
+      return `<dt>${escapeHtml(reading)}</dt><dd>${definitions}${conjugations}</dd>`;
+    })
+    .join("");
+
+  return `<dl class="alternatives"><dt>${escapeHtml(surfaceReading)}</dt><dd><span class="compound-desc">Compound word: <span class="compound-desc-word">${escapeHtml(compoundWords.join(" + "))}</span></span><dl class="compounds">${entries}</dl></dd></dl>`;
 };
 
 const formatDefinitions = (candidate) => {
+  const compoundDefinitions = formatCompoundDefinitions(candidate);
+  if (compoundDefinitions) return compoundDefinitions;
+
   const glosses = candidate.gloss;
   const hasGlosses =
     Array.isArray(glosses) &&
@@ -149,6 +195,9 @@ const defaultCandidates = (value) => {
 };
 
 const dictionaryForm = (candidate) => {
+  const components = compoundComponents(candidate);
+  if (components.length > 0) return dictionaryForm(components[0]);
+
   if (!Array.isArray(candidate.conj)) {
     return {
       dictForm: candidate.text,

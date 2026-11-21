@@ -61,6 +61,30 @@ test("record appends ordered JSONL with fixed schema and timestamp", async () =>
   ]);
 });
 
+test("serializes event immediately after the request identifier", async () => {
+  const logsDirectory = await createDirectory();
+  const writer = createAnalysisLogWriter({ enabled: true, logsDirectory });
+
+  writer.record({
+    durationMs: 42,
+    event: "transformation.completed",
+    provider: "api",
+    requestId: "request-1",
+    text: "猫です",
+  });
+  await writer.close();
+
+  const line = await fs.readFile(
+    path.join(logsDirectory, "ichiran-analysis.jsonl"),
+    "utf8",
+  );
+
+  assert.match(
+    line,
+    /^\{"provider":"api","requestId":"request-1","event":"transformation.completed","durationMs":42,"text":"猫です"/,
+  );
+});
+
 test("rotation counts UTF-8 bytes and retains current and previous files", async () => {
   const logsDirectory = await createDirectory();
   const first = event({ text: "猫" });

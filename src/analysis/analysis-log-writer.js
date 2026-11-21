@@ -42,8 +42,12 @@ const createAnalysisLogWriter = ({
 
   const write = async (event) => {
     try {
+      const { event: eventName, provider, requestId, ...eventDetails } = event;
       const line = `${JSON.stringify({
-        ...event,
+        ...(provider === undefined ? {} : { provider }),
+        ...(requestId === undefined ? {} : { requestId }),
+        ...(eventName === undefined ? {} : { event: eventName }),
+        ...eventDetails,
         schemaVersion: 1,
         timestamp: now(),
       })}\n`;
