@@ -140,6 +140,8 @@ const createLocalApiRouter = ({
           complete(controller);
           recordFailure("response.parse", "unexpected", response.status);
           onFailure("unexpected");
+        } else {
+          recordDiscarded();
         }
         return;
       }
@@ -164,6 +166,8 @@ const createLocalApiRouter = ({
           complete(controller);
           recordFailure("response.transform", "unexpected", response.status);
           onFailure("unexpected");
+        } else {
+          recordDiscarded();
         }
         return;
       }
@@ -177,6 +181,8 @@ const createLocalApiRouter = ({
           readerResult: result,
         });
         onSuccess(result, context);
+      } else {
+        recordDiscarded();
       }
     };
 

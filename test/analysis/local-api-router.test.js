@@ -138,6 +138,30 @@ test("records cancellation, stale completion, and safe failure details", async (
   assert.equal(Number.isFinite(diagnostics.at(-1).durationMs), true);
 });
 
+test("records a discarded API request when its response body fails after cancellation", async () => {
+  const diagnostics = [];
+  const context = { provider: "api", requestId: "request-1", text: "old" };
+  const body = deferred();
+  const { calls, router } = createHarness({
+    diagnostics: { record: (entry) => diagnostics.push(entry) },
+  });
+
+  router.analyze("old", context);
+  calls[0].resolve({ status: 200, json: () => body.promise });
+  await flush();
+  router.cancel();
+  body.reject(new Error("late parse failure"));
+  await flush();
+  await flush();
+
+  assert.deepEqual(diagnostics.at(-1), {
+    ...context,
+    durationMs: diagnostics.at(-1).durationMs,
+    event: "analysis.discarded",
+  });
+  assert.equal(Number.isFinite(diagnostics.at(-1).durationMs), true);
+});
+
 test("uses the reader callback contract for successful and failed analyses", async (t) => {
   const readerWords = [{ word: "猫", rubyReading: "ねこ" }];
   const acceptedFailureCodes = new Set([

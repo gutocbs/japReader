@@ -204,3 +204,57 @@ test("records matching ichi DOM input and transformed reader result", () => {
     },
   ]);
 });
+
+test("does not cancel an ichi request that has already completed", () => {
+  const events = [];
+  const contexts = [];
+  let sequence = 0;
+  const coordinator = createAnalysisSourceCoordinator({
+    apiRouter: { analyze: () => {}, cancel: () => {} },
+    createRequestId: () => `request-${++sequence}`,
+    diagnostics: { record: (entry) => events.push(entry) },
+    now: () => 10,
+    onIchiFailure: () => {},
+    onIchiSuccess: () => {},
+    requestIchiAnalysis: (text, context) => contexts.push(context),
+    useIchiMoeForShortText: true,
+  });
+
+  coordinator.analyze("first");
+  coordinator.receiveIchiResult([], "first", contexts[0], { dom: {} });
+  coordinator.analyze("second");
+
+  assert.equal(
+    events.some(
+      (entry) =>
+        entry.event === "analysis.cancelled" && entry.requestId === "request-1",
+    ),
+    false,
+  );
+});
+
+test("records a discarded stale ichi failure", () => {
+  const events = [];
+  const contexts = [];
+  let sequence = 0;
+  const coordinator = createAnalysisSourceCoordinator({
+    apiRouter: { analyze: () => {}, cancel: () => {} },
+    createRequestId: () => `request-${++sequence}`,
+    diagnostics: { record: (entry) => events.push(entry) },
+    now: () => 10,
+    onIchiFailure: () => {},
+    onIchiSuccess: () => {},
+    requestIchiAnalysis: (text, context) => contexts.push(context),
+    useIchiMoeForShortText: true,
+  });
+
+  coordinator.analyze("first");
+  coordinator.analyze("second");
+  coordinator.receiveIchiFailure("first", contexts[0]);
+
+  assert.deepEqual(events.at(-1), {
+    ...contexts[0],
+    durationMs: 0,
+    event: "analysis.discarded",
+  });
+});

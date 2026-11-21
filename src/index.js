@@ -103,6 +103,18 @@ const diagnostics = createAnalysisLogWriter({
   enabled: recordIchiranAnalysisDiagnostics,
   logsDirectory: path.dirname(HISTORY.path),
 });
+let isExiting = false;
+
+const exitApplication = async () => {
+  if (isExiting) return;
+
+  isExiting = true;
+  localApiRouter?.dispose();
+  try {
+    await diagnostics.close();
+  } catch {}
+  app.exit();
+};
 
 readerOnTop = readerAlwaysOnTop;
 dictOnTop = dictAlwaysOnTop;
@@ -202,7 +214,7 @@ const createBoxes = () => {
 
   ipcMain.on("restartProgram", () => {
     app.relaunch();
-    app.exit();
+    void exitApplication();
   });
 
   if (useReader) {
@@ -232,13 +244,13 @@ const createBoxes = () => {
       if (choice == 1) {
         e.preventDefault();
       } else {
+        e.preventDefault();
         BrowserWindow.getAllWindows()
           .filter((win) => win.id != readerBox.id)
           .forEach((win) => {
             win.close();
           });
-        localApiRouter?.dispose();
-        app.exit();
+        void exitApplication();
       }
     });
 
@@ -438,12 +450,13 @@ const createBoxes = () => {
         if (choice == 1) {
           e.preventDefault();
         } else {
+          e.preventDefault();
           BrowserWindow.getAllWindows()
             .filter((win) => win.id != translationBox.id)
             .forEach((win) => {
               win.close();
             });
-          app.exit();
+          void exitApplication();
         }
       });
     } else {
@@ -490,7 +503,9 @@ app.on("window-all-closed", () => {
   }
 });
 
-app.on("before-quit", () => {
-  localApiRouter?.dispose();
-  void diagnostics.close().catch(() => {});
+app.on("before-quit", (event) => {
+  if (isExiting) return;
+
+  event.preventDefault();
+  void exitApplication();
 });

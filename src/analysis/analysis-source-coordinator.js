@@ -81,6 +81,8 @@ const createAnalysisSourceCoordinator = ({
         readerResult: { fullText, words },
       });
     }
+    activeSource = undefined;
+    activeIchiContext = undefined;
     onIchiSuccess(words, fullText, context);
   };
 
@@ -89,8 +91,16 @@ const createAnalysisSourceCoordinator = ({
       activeSource !== "ichi" ||
       fullText !== submittedText ||
       (context && context.requestId !== activeIchiContext?.requestId)
-    )
+    ) {
+      if (context) {
+        diagnostics.record({
+          ...context,
+          durationMs: now() - context.startedAt,
+          event: "analysis.discarded",
+        });
+      }
       return;
+    }
 
     if (context) {
       diagnostics.record({
@@ -101,6 +111,8 @@ const createAnalysisSourceCoordinator = ({
       });
     }
 
+    activeSource = undefined;
+    activeIchiContext = undefined;
     onIchiFailure();
   };
 

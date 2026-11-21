@@ -5,10 +5,19 @@ const path = require("node:path");
 const test = require("node:test");
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
+const deferred = () => {
+  let resolve;
+  const promise = new Promise((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+};
 
 const startApplicationWithOptions = async (configuredOptions = {}) => {
   const windows = [];
   const ipcMain = new EventEmitter();
+  const diagnosticsClose = deferred();
+  let diagnosticsCloseCalls = 0;
 
   class FakeBrowserWindow extends EventEmitter {
     constructor(config) {
@@ -94,7 +103,10 @@ const startApplicationWithOptions = async (configuredOptions = {}) => {
   }
 
   const app = new EventEmitter();
-  app.exit = () => {};
+  app.exitCalls = 0;
+  app.exit = () => {
+    app.exitCalls += 1;
+  };
   app.quit = () => {};
   app.relaunch = () => {};
   app.whenReady = () => Promise.resolve();
@@ -119,6 +131,17 @@ const startApplicationWithOptions = async (configuredOptions = {}) => {
     }
 
     if (request === "electron-store") return FakeStore;
+    if (request === "./analysis/analysis-log-writer") {
+      return {
+        createAnalysisLogWriter: () => ({
+          close: () => {
+            diagnosticsCloseCalls += 1;
+            return diagnosticsClose.promise;
+          },
+          record: () => {},
+        }),
+      };
+    }
     if (request === "electron-squirrel-startup") return false;
     if (request === "module-alias/register") return {};
     if (request === "@tools") {
@@ -143,8 +166,30 @@ const startApplicationWithOptions = async (configuredOptions = {}) => {
     delete require.cache[entryPoint];
   }
 
-  return { ipcMain, windows };
+  return {
+    app,
+    diagnosticsClose,
+    getDiagnosticsCloseCalls: () => diagnosticsCloseCalls,
+    ipcMain,
+    windows,
+  };
 };
+
+test("drains diagnostics before restarting with app.exit", async () => {
+  const { app, diagnosticsClose, getDiagnosticsCloseCalls, ipcMain } =
+    await startApplicationWithOptions();
+
+  ipcMain.emit("restartProgram");
+  await flush();
+
+  assert.equal(getDiagnosticsCloseCalls(), 1);
+  assert.equal(app.exitCalls, 0);
+
+  diagnosticsClose.resolve();
+  await flush();
+
+  assert.equal(app.exitCalls, 1);
+});
 
 test("keeps restored maximized Options hidden until openOptions explicitly shows it", async () => {
   const { ipcMain, windows } = await startApplicationWithOptions();
