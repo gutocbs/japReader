@@ -66,6 +66,39 @@ test("posts the submitted text to the fixed local endpoint and publishes adapted
   assert.deepEqual(successes, [{ words: ["adapted"], fullText: "猫です" }]);
 });
 
+test("records the raw API response before the adapted reader result", async () => {
+  const diagnostics = [];
+  const context = {
+    provider: "api",
+    requestId: "request-1",
+    text: "猫です",
+  };
+  const { calls, router } = createHarness({
+    diagnostics: { record: (entry) => diagnostics.push(entry) },
+  });
+
+  router.analyze("猫です", context);
+  calls[0].resolve(successfulResponse({ words: ["raw"] }));
+  await flush();
+  await flush();
+
+  assert.deepEqual(diagnostics, [
+    {
+      ...context,
+      event: "provider.response_received",
+      httpStatus: 200,
+      response: { words: ["raw"] },
+    },
+    {
+      ...context,
+      durationMs: diagnostics[1]?.durationMs,
+      event: "transformation.completed",
+      readerResult: { fullText: "猫です", words: ["raw"] },
+    },
+  ]);
+  assert.equal(Number.isFinite(diagnostics[1].durationMs), true);
+});
+
 test("uses the reader callback contract for successful and failed analyses", async (t) => {
   const readerWords = [{ word: "猫", rubyReading: "ねこ" }];
   const acceptedFailureCodes = new Set([

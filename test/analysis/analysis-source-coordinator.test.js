@@ -43,6 +43,60 @@ test("disabled source selection routes short and long text only to the local API
   assert.deepEqual(cancelled, []);
 });
 
+test("records the selected provider with a unique correlation context", () => {
+  const events = [];
+  const contexts = [];
+  let sequence = 0;
+  const coordinator = createAnalysisSourceCoordinator({
+    apiRouter: {
+      analyze: (text, context) => contexts.push({ text, context }),
+      cancel: () => {},
+    },
+    createRequestId: () => `request-${++sequence}`,
+    diagnostics: { record: (entry) => events.push(entry) },
+    now: () => 42,
+    useIchiMoeForShortText: false,
+  });
+
+  coordinator.analyze("same");
+  coordinator.analyze("same");
+
+  assert.deepEqual(contexts, [
+    {
+      text: "same",
+      context: {
+        provider: "api",
+        requestId: "request-1",
+        startedAt: 42,
+        text: "same",
+      },
+    },
+    {
+      text: "same",
+      context: {
+        provider: "api",
+        requestId: "request-2",
+        startedAt: 42,
+        text: "same",
+      },
+    },
+  ]);
+  assert.deepEqual(events, [
+    {
+      event: "analysis.started",
+      provider: "api",
+      requestId: "request-1",
+      text: "same",
+    },
+    {
+      event: "analysis.started",
+      provider: "api",
+      requestId: "request-2",
+      text: "same",
+    },
+  ]);
+});
+
 test("enabled source selection uses the JavaScript UTF-16 boundary", () => {
   const { apiTexts, coordinator, ichiTexts } = createHarness(true);
   const eightyNineCodeUnits = "😀".repeat(44) + "a";

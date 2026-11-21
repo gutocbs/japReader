@@ -21,6 +21,8 @@ const createLocalApiRouter = ({
   onSuccess,
   onFailure,
   endpoint = DEFAULT_ENDPOINT,
+  diagnostics = { record: () => {} },
+  now = () => performance.now(),
 }) => {
   let activeController;
   let disposed = false;
@@ -41,11 +43,12 @@ const createLocalApiRouter = ({
     activeController = undefined;
   };
 
-  const analyze = (text) => {
+  const analyze = (text, context) => {
     if (disposed) return;
 
     cancel();
     const requestGeneration = generation;
+    const startedAt = now();
     const controller = new AbortController();
     activeController = controller;
 
@@ -98,6 +101,13 @@ const createLocalApiRouter = ({
 
       if (!isCurrent(requestGeneration)) return;
 
+      diagnostics.record({
+        ...context,
+        event: "provider.response_received",
+        httpStatus: response.status,
+        response: responseBody,
+      });
+
       let result;
       try {
         result = adaptResponse(responseBody, text);
@@ -111,7 +121,13 @@ const createLocalApiRouter = ({
 
       if (isCurrent(requestGeneration)) {
         complete(controller);
-        onSuccess(result);
+        diagnostics.record({
+          ...context,
+          durationMs: now() - startedAt,
+          event: "transformation.completed",
+          readerResult: result,
+        });
+        onSuccess(result, context);
       }
     };
 

@@ -4,22 +4,39 @@ const createAnalysisSourceCoordinator = ({
   onIchiSuccess,
   requestIchiAnalysis,
   useIchiMoeForShortText,
+  diagnostics = { record: () => {} },
+  createRequestId = () => crypto.randomUUID(),
+  now = () => performance.now(),
 }) => {
   let activeSource;
   let submittedText;
 
   const analyze = (text) => {
     submittedText = text;
+    const provider =
+      useIchiMoeForShortText && text.length < 90 ? "ichi" : "api";
+    const context = {
+      provider,
+      requestId: createRequestId(),
+      startedAt: now(),
+      text,
+    };
+    diagnostics.record({
+      event: "analysis.started",
+      provider: context.provider,
+      requestId: context.requestId,
+      text: context.text,
+    });
 
-    if (useIchiMoeForShortText && text.length < 90) {
+    if (provider === "ichi") {
       activeSource = "ichi";
       apiRouter.cancel();
-      requestIchiAnalysis(text);
+      requestIchiAnalysis(text, context);
       return;
     }
 
     activeSource = "api";
-    apiRouter.analyze(text);
+    apiRouter.analyze(text, context);
   };
 
   const receiveIchiResult = (words, fullText) => {
