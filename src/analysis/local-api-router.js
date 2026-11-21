@@ -39,17 +39,21 @@ const createLocalApiRouter = ({
     }
   };
 
+  const recordCancellation = (request, reason) => {
+    if (request?.context) {
+      diagnostics.record({
+        ...request.context,
+        durationMs: now() - request.startedAt,
+        event: "analysis.cancelled",
+        reason,
+      });
+    }
+  };
+
   const cancel = () => {
     if (disposed) return;
 
-    if (activeRequest?.context) {
-      diagnostics.record({
-        ...activeRequest.context,
-        durationMs: now() - activeRequest.startedAt,
-        event: "analysis.cancelled",
-        reason: "superseded",
-      });
-    }
+    recordCancellation(activeRequest, "superseded");
     generation += 1;
     activeController?.abort();
     activeController = undefined;
@@ -79,7 +83,7 @@ const createLocalApiRouter = ({
     };
 
     const recordDiscarded = () => {
-      if (!context) return;
+      if (!context || disposed) return;
       diagnostics.record({
         ...context,
         durationMs: now() - startedAt,
@@ -192,6 +196,7 @@ const createLocalApiRouter = ({
   const dispose = () => {
     if (disposed) return;
 
+    recordCancellation(activeRequest, "shutdown");
     disposed = true;
     generation += 1;
     activeController?.abort();

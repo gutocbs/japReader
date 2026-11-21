@@ -94,10 +94,17 @@ const formatConjugations = (candidate) => {
               typeof property.pos === "string" &&
               typeof property.type === "string",
           )
-          .map(
-            (property) =>
-              `<div class="conj-prop"><span class="pos-desc">[${formatPartOfSpeech(property.pos)}]</span> <span class="conj-type">${escapeHtml(property.type)}</span>${property.fml === true ? '<span class="conj-formal">Formal</span>' : ""}</div>`,
-          )
+          .map((property) => {
+            const negative =
+              property.neg === true
+                ? ' <span class="conj-neg">Negative</span>'
+                : "";
+            const formal =
+              property.fml === true
+                ? ' <span class="conj-formal">Formal</span>'
+                : "";
+            return `<div class="conj-prop"><span class="pos-desc">[${formatPartOfSpeech(property.pos)}]</span> <span class="conj-type">${escapeHtml(property.type)}</span>${negative}${formal}</div>`;
+          })
           .join("")
       : "";
     return `<div class="conjugation">${properties}<div class="conj-gloss"><dl><dt>${escapeHtml(conjugation.reading.trim())}</dt><dd>${formatGlossList(conjugation.gloss)}</dd></dl></div></div>`;

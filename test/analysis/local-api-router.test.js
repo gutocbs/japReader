@@ -305,6 +305,34 @@ test("dispose aborts active work and suppresses late results and future callback
   assert.equal(calls.length, 1);
 });
 
+test("dispose records shutdown cancellation without a discarded late completion", async () => {
+  const diagnostics = [];
+  const context = {
+    provider: "api",
+    requestId: "request-1",
+    text: "before dispose",
+  };
+  const { calls, router } = createHarness({
+    diagnostics: { record: (entry) => diagnostics.push(entry) },
+  });
+
+  router.analyze("before dispose", context);
+  router.dispose();
+  calls[0].resolve(successfulResponse({ words: ["late"] }));
+  await flush();
+  await flush();
+
+  assert.deepEqual(diagnostics, [
+    {
+      ...context,
+      durationMs: diagnostics[0]?.durationMs,
+      event: "analysis.cancelled",
+      reason: "shutdown",
+    },
+  ]);
+  assert.equal(Number.isFinite(diagnostics[0].durationMs), true);
+});
+
 test("cancel aborts active work and keeps the router reusable", async () => {
   const { calls, failures, router, successes } = createHarness();
 

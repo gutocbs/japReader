@@ -192,10 +192,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
     let context;
     let response;
+    let shouldClearContext = false;
     try {
       context = JSON.parse(sessionStorage.getItem(CONTEXT_KEY));
       response = { dom: collectIchiDomSnapshot(document) };
-      sessionStorage.removeItem(CONTEXT_KEY);
+      shouldClearContext = true;
     } catch {}
 
     ipcRenderer.send(
@@ -205,6 +206,11 @@ window.addEventListener("DOMContentLoaded", () => {
       context,
       response,
     );
+    if (shouldClearContext) {
+      try {
+        sessionStorage.removeItem(CONTEXT_KEY);
+      } catch {}
+    }
   }
 });
 
@@ -212,10 +218,16 @@ setTimeout(() => {
   if (document.body.children.length === 0) {
     const fullText = new URL(document.location.href).searchParams.get("q");
     let context;
+    let shouldClearContext = false;
     try {
       context = JSON.parse(sessionStorage.getItem(CONTEXT_KEY));
-      sessionStorage.removeItem(CONTEXT_KEY);
+      shouldClearContext = true;
     } catch {}
     ipcRenderer.send("ichiConnectionError", fullText, context);
+    if (shouldClearContext) {
+      try {
+        sessionStorage.removeItem(CONTEXT_KEY);
+      } catch {}
+    }
   }
 }, 10000);

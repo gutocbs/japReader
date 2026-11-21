@@ -225,7 +225,7 @@ test("uses the selected conjugation gloss when the surface candidate has none", 
 test("renders readok conjugations in the ichi.moe dictionary structure", () => {
   const response = fixture("conjugation-gloss.json");
   response.chunks[0].analysis[0][0][2][1].conj[0].prop = [
-    { pos: "v1", type: "Past (~ta)" },
+    { neg: true, pos: "v1", type: "Past (~ta)" },
   ];
   const { words } = adaptAnalyzeResponse(response, response.text);
   const definitions = words.at(-2).definitions;
@@ -241,6 +241,7 @@ test("renders readok conjugations in the ichi.moe dictionary structure", () => {
     /<span class="pos-desc">\[<span title="Ichidan verb">v1<\/span>\]<\/span>/,
   );
   assert.match(definitions, /<div class="conj-gloss">/);
+  assert.match(definitions, /<span class="conj-neg">Negative<\/span>/);
   assert.match(definitions, /<dt>上げる 【あげる】<\/dt>/);
   assert.match(definitions, /<ol class="gloss-definitions"><li>/);
   assert.match(definitions, /raise &lt;something&gt; &amp; &quot;up&quot;/);
