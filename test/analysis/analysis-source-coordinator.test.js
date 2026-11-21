@@ -169,3 +169,38 @@ test("ichi failures never retry or fall back to the local API", () => {
   assert.deepEqual(ichiFailures, [true]);
   assert.deepEqual(apiTexts, []);
 });
+
+test("records matching ichi DOM input and transformed reader result", () => {
+  const events = [];
+  let requestedContext;
+  const coordinator = createAnalysisSourceCoordinator({
+    apiRouter: { analyze: () => {}, cancel: () => {} },
+    createRequestId: () => "request-ichi",
+    diagnostics: { record: (entry) => events.push(entry) },
+    now: () => 10,
+    onIchiSuccess: () => {},
+    requestIchiAnalysis: (text, context) => {
+      requestedContext = context;
+    },
+    useIchiMoeForShortText: true,
+  });
+
+  coordinator.analyze("育った");
+  coordinator.receiveIchiResult(["育った"], "育った", requestedContext, {
+    dom: { queryText: ["育った"], wordChunks: [] },
+  });
+
+  assert.deepEqual(events.slice(1), [
+    {
+      ...requestedContext,
+      event: "provider.response_received",
+      dom: { queryText: ["育った"], wordChunks: [] },
+    },
+    {
+      ...requestedContext,
+      durationMs: 0,
+      event: "transformation.completed",
+      readerResult: { fullText: "育った", words: ["育った"] },
+    },
+  ]);
+});

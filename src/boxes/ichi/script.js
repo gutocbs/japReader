@@ -1,11 +1,17 @@
 const { ipcRenderer } = require("electron");
 const { createIchiMoeUrl } = require("../../analysis/ichi-url");
+const { collectIchiDomSnapshot } = require("../../analysis/ichi-dom-snapshot");
+
+const CONTEXT_KEY = "japReaderIchiranAnalysisContext";
 
 window.addEventListener("DOMContentLoaded", () => {
   // eslint-disable-next-line global-require
   const $ = require("jquery");
 
-  ipcRenderer.on("parseWithIchi", (event, text) => {
+  ipcRenderer.on("parseWithIchi", (event, text, context) => {
+    try {
+      sessionStorage.setItem(CONTEXT_KEY, JSON.stringify(context));
+    } catch {}
     document.location.href = createIchiMoeUrl(text);
   });
 
@@ -184,13 +190,32 @@ window.addEventListener("DOMContentLoaded", () => {
       fullText += element.textContent;
     });
 
-    ipcRenderer.send("sendParsedData", returnedWords, fullText);
+    let context;
+    let response;
+    try {
+      context = JSON.parse(sessionStorage.getItem(CONTEXT_KEY));
+      response = { dom: collectIchiDomSnapshot(document) };
+      sessionStorage.removeItem(CONTEXT_KEY);
+    } catch {}
+
+    ipcRenderer.send(
+      "sendParsedData",
+      returnedWords,
+      fullText,
+      context,
+      response,
+    );
   }
 });
 
 setTimeout(() => {
   if (document.body.children.length === 0) {
     const fullText = new URL(document.location.href).searchParams.get("q");
-    ipcRenderer.send("ichiConnectionError", fullText);
+    let context;
+    try {
+      context = JSON.parse(sessionStorage.getItem(CONTEXT_KEY));
+      sessionStorage.removeItem(CONTEXT_KEY);
+    } catch {}
+    ipcRenderer.send("ichiConnectionError", fullText, context);
   }
 }, 10000);

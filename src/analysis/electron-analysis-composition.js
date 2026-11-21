@@ -50,8 +50,16 @@ const createReaderAnalysisCoordinator = ({
     onIchiFailure: () => {
       readerBox.webContents.send("ichiConnectionError");
     },
-    onIchiSuccess: (words, fullText) => {
-      readerBox.webContents.send("receiveParsedData", words, fullText);
+    onIchiSuccess: (words, fullText, context) => {
+      const message = ["receiveParsedData", words, fullText];
+      if (context) {
+        message.push({
+          provider: context.provider,
+          requestId: context.requestId,
+          text: context.text,
+        });
+      }
+      readerBox.webContents.send(...message);
     },
     diagnostics,
     createRequestId,
@@ -61,11 +69,11 @@ const createReaderAnalysisCoordinator = ({
   });
 
 const registerIchiAnalysisEvents = (ipcMain, coordinator) => {
-  ipcMain.on("sendParsedData", (event, words, fullText) => {
-    coordinator.receiveIchiResult(words, fullText);
+  ipcMain.on("sendParsedData", (event, words, fullText, context, response) => {
+    coordinator.receiveIchiResult(words, fullText, context, response);
   });
-  ipcMain.on("ichiConnectionError", (event, fullText) => {
-    coordinator.receiveIchiFailure(fullText);
+  ipcMain.on("ichiConnectionError", (event, fullText, context) => {
+    coordinator.receiveIchiFailure(fullText, context);
   });
 };
 
