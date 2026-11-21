@@ -266,7 +266,8 @@ const createBoxes = () => {
       apiRouter: localApiRouter,
       readerBox,
       requestIchiAnalysis: ichiBox
-        ? (text) => ichiBox.webContents.send("parseWithIchi", text)
+        ? (text, context) =>
+            ichiBox.webContents.send("parseWithIchi", text, context)
         : undefined,
       useIchiMoeForShortText,
     });
