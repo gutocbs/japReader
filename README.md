@@ -119,9 +119,32 @@ development commands.
 
 ### <ins>Local Ichiran API prerequisite</ins>
 
-Run `ichiran-api` at `127.0.0.1:8080` before using japReader's reader. If the
-local API is unavailable or cannot analyze a copied text, japReader shows a
-safe failure message. It does not fall back to ichi.moe.
+By default, japReader sends local API analysis requests to
+`http://127.0.0.1:18080`. Before using that mode, start `ichiran-api` and
+check that `GET http://127.0.0.1:18080/health` succeeds.
+
+Open the Options menu (`O`) to configure the **Ichiran API** settings:
+
+- **Use Ichiran API** enables or disables requests to the local API.
+- **Ichiran API URL** changes the API base URL. It accepts an HTTP or HTTPS
+  origin for any host (and optional port), such as
+  `http://127.0.0.1:18080` or `https://ichiran.example.com`. Paths, query
+  strings, fragments, and credentials are not accepted. A trailing slash is
+  ignored.
+- **Use ichi.moe for short text** sends text shorter than 90 JavaScript
+  UTF-16 code units to ichi.moe while the API remains enabled.
+
+The analysis source is selected as follows:
+
+| Use Ichiran API | Use ichi.moe for short text | Behavior |
+|---|---|---|
+| Enabled | Disabled | All text uses the configured API. |
+| Enabled | Enabled | Text shorter than 90 UTF-16 code units uses ichi.moe; text with 90 or more uses the API. |
+| Disabled | Either value | Text shorter than 90 UTF-16 code units uses ichi.moe. Text with 90 or more is rejected locally with the Reader warning and is not sent to either provider. |
+
+An API failure does not retry or fall back to ichi.moe, and an ichi.moe failure
+does not fall back to the API. japReader keeps only the latest clipboard
+analysis request; results from earlier requests are ignored.
 
 
 
@@ -157,7 +180,9 @@ In the Reader window you can quickly change the status of a word with mouse butt
 
 # [![](images/logo/logo_32.png)](#-faq) FAQ
 ### <ins>How does this work?</ins>
-* It watches your clipboard for Japanese text. Once Japanese text is detected, it gets parsing and dictionary data from the local `ichiran-api` service. The retained ichi.moe integration is inactive, is not a failure fallback, and is reserved for a future optional setting.
+* It watches your clipboard for Japanese text. Once Japanese text is detected,
+  it gets parsing and dictionary data according to the configured
+  [Ichiran API and ichi.moe settings](#local-ichiran-api-prerequisite).
 * **Note:** Clipboard watching on Linux currently only works on X11, not Wayland.
 * The word status tracking is done by checking each parsed dictionary form of a word against a small collection of word databases that accumulate as you use the program.
 * The Anki feature uses the [AnkiConnect](https://github.com/FooSoft/anki-connect) API to send over the necessary card data.
