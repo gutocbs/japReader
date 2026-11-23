@@ -50,7 +50,7 @@ test("analysis source option defaults to local API and exposes the approved Opti
   );
   assert.match(
     normalizedMarkup,
-    /With the local API enabled, all text uses it unless ichi\.moe is enabled for text under 90 characters\. Text with 90 or more characters always uses the local API\. With the local API disabled, ichi\.moe analyzes all text\./,
+    /With the local API enabled, all text uses it unless ichi\.moe is enabled for text under 90 characters\. Text with 90 or more characters always uses the local API\. With the local API disabled, ichi\.moe analyzes only text under 90 characters; text with 90 or more characters is rejected locally\./,
   );
 });
 
