@@ -30,6 +30,10 @@ test("rejects Ichiran API URLs that are not origins", () => {
     "ftp://api.example.test",
     "https://user:password@api.example.test",
     "https://api.example.test/analyze",
+    "https://api.example.test?",
+    "https://api.example.test#",
+    "https://api.example.test/?",
+    "https://api.example.test/#",
     "https://api.example.test/?debug=true",
     "https://api.example.test/#fragment",
   ]) {

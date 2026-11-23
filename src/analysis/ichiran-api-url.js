@@ -10,6 +10,8 @@ const normalizeIchiranApiBaseUrl = (value) => {
     !["http:", "https:"].includes(url.protocol) ||
     url.username ||
     url.password ||
+    value.includes("?") ||
+    value.includes("#") ||
     url.pathname !== "/" ||
     url.search ||
     url.hash
