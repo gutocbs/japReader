@@ -245,6 +245,26 @@ If you're learning Japanese, this option is good to select, because you can try 
               <span class="analysis-route analysis-route-ichi">ichi.moe</span>
             </div>
             <div class="option">
+              <input type="checkbox" id="useIchiranApi" name="useIchiranApi" />
+              <label for="useIchiranApi">Use local Ichiran API</label>
+            </div>
+            <section class="option">
+              <input
+                type="url"
+                spellcheck="false"
+                id="ichiranApiBaseUrl"
+                name="ichiranApiBaseUrl"
+                aria-describedby="ichiranApiBaseUrl-error"
+              />
+              <label for="ichiranApiBaseUrl">Ichiran API URL</label>
+            </section>
+            <div
+              id="ichiranApiBaseUrl-error"
+              class="analysis-source-error"
+              role="alert"
+              hidden
+            ></div>
+            <div class="option">
               <input
                 type="checkbox"
                 id="useIchiMoeForShortText"
@@ -255,8 +275,10 @@ If you're learning Japanese, this option is good to select, because you can try 
               >
             </div>
             <p>
-              Sends text under 90 characters to ichi.moe. Longer text stays on
-              the local API.
+              With the local API enabled, all text uses it unless ichi.moe is
+              enabled for text under 90 characters. Text with 90 or more
+              characters always uses the local API. With the local API disabled,
+              ichi.moe analyzes all text.
             </p>
             <div class="option">
               <input

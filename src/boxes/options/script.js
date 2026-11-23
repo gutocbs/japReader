@@ -3,6 +3,10 @@ const { ipcRenderer } = require("electron");
 const tools = require("@tools");
 const Store = require("electron-store");
 const deepl = require("deepl-node");
+const {
+  syncAnalysisSourceControls,
+  validateAnalysisSourceControls,
+} = require("./analysis-source-controls");
 const OPTIONS = new Store(tools.getOptionsStoreOptions());
 const WINDOW_SETTINGS = new Store(tools.getWindowStoreOptions());
 const STATUS_DATA = new Store(tools.getStatusDataStoreOptions());
@@ -97,7 +101,30 @@ window.addEventListener("DOMContentLoaded", () => {
 
   handleOptionConflicts();
 
+  const analysisSourceControls = {
+    useIchiranApiInput: document.querySelector("#useIchiranApi"),
+    apiBaseUrlInput: document.querySelector("#ichiranApiBaseUrl"),
+    useIchiMoeForShortTextInput: document.querySelector(
+      "#useIchiMoeForShortText",
+    ),
+  };
+  syncAnalysisSourceControls(analysisSourceControls);
+  analysisSourceControls.useIchiranApiInput.addEventListener("change", () => {
+    syncAnalysisSourceControls(analysisSourceControls);
+  });
+
   document.querySelector(".apply.btn").addEventListener("click", () => {
+    const validation = validateAnalysisSourceControls({
+      ...analysisSourceControls,
+      errorElement: document.querySelector("#ichiranApiBaseUrl-error"),
+    });
+    if (!validation.valid) return;
+
+    if (analysisSourceControls.useIchiranApiInput.checked) {
+      analysisSourceControls.apiBaseUrlInput.value =
+        validation.normalizedBaseUrl;
+    }
+
     ipcRenderer
       .invoke("showDialog", "Are you sure you want to apply settings?")
       .then((result) => {

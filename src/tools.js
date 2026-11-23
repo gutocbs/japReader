@@ -24,6 +24,11 @@ const schemaOptions = {
       useReader: { default: true, type: "boolean" },
       readerAlwaysOnTop: { default: false, type: "boolean" },
       dictAlwaysOnTop: { default: false, type: "boolean" },
+      useIchiranApi: { default: true, type: "boolean" },
+      ichiranApiBaseUrl: {
+        default: "http://127.0.0.1:18080",
+        type: "string",
+      },
       useIchiMoeForShortText: { default: false, type: "boolean" },
       recordIchiranAnalysisDiagnostics: { default: false, type: "boolean" },
       leftClickDisregardStatus: { default: false, type: "boolean" },

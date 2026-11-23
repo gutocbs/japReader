@@ -267,6 +267,15 @@ section#apply {
   font-size: 0.85em;
 }
 
+input#ichiranApiBaseUrl {
+  width: 17em;
+}
+
+.analysis-source-error {
+  color: var(--dangerZoneButton);
+  font-size: 0.85em;
+}
+
 #analysis-source .option input[type="checkbox"] {
   display: block;
   position: absolute;

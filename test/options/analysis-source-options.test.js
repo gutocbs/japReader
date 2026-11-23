@@ -14,7 +14,32 @@ test("analysis source option defaults to local API and exposes the approved Opti
   const normalizedMarkup = markup.replace(/\s+/g, " ");
 
   assert.equal(schema.options.properties.useIchiMoeForShortText.default, false);
+  assert.deepEqual(schema.options.properties.useIchiranApi, {
+    default: true,
+    type: "boolean",
+  });
+  assert.deepEqual(schema.options.properties.ichiranApiBaseUrl, {
+    default: "http://127.0.0.1:18080",
+    type: "string",
+  });
   assert.match(markup, /id="analysis-source"/);
+  assert.match(
+    markup,
+    /<input[^>]+id="useIchiranApi"[^>]+name="useIchiranApi"/,
+  );
+  assert.match(
+    markup,
+    /<label for="useIchiranApi"\s*>Use local Ichiran API<\/label\s*>/,
+  );
+  assert.match(
+    markup,
+    /<input[^>]+id="ichiranApiBaseUrl"[^>]+name="ichiranApiBaseUrl"/,
+  );
+  assert.match(
+    markup,
+    /<label for="ichiranApiBaseUrl"\s*>Ichiran API URL<\/label\s*>/,
+  );
+  assert.match(markup, /id="ichiranApiBaseUrl-error"[^>]+role="alert"/);
   assert.match(
     markup,
     /<input[^>]+id="useIchiMoeForShortText"[^>]+name="useIchiMoeForShortText"/,
@@ -25,7 +50,7 @@ test("analysis source option defaults to local API and exposes the approved Opti
   );
   assert.match(
     normalizedMarkup,
-    /Sends text under 90 characters to ichi\.moe\. Longer text stays on the local API\./,
+    /With the local API enabled, all text uses it unless ichi\.moe is enabled for text under 90 characters\. Text with 90 or more characters always uses the local API\. With the local API disabled, ichi\.moe analyzes all text\./,
   );
 });
 
