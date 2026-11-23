@@ -42,6 +42,7 @@ const createReaderAnalysisCoordinator = ({
   apiRouter,
   readerBox,
   requestIchiAnalysis,
+  useIchiranApi,
   useIchiMoeForShortText,
   diagnostics,
   createRequestId,
@@ -51,6 +52,9 @@ const createReaderAnalysisCoordinator = ({
     apiRouter,
     onIchiFailure: () => {
       readerBox.webContents.send("ichiConnectionError");
+    },
+    onIchiInputTooLarge: () => {
+      readerBox.webContents.send("tooManyCharacters");
     },
     onIchiSuccess: (words, fullText, context) => {
       const message = ["receiveParsedData", words, fullText];
@@ -67,6 +71,7 @@ const createReaderAnalysisCoordinator = ({
     createRequestId,
     now,
     requestIchiAnalysis,
+    useIchiranApi,
     useIchiMoeForShortText,
   });
 

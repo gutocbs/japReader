@@ -1,8 +1,10 @@
 const createAnalysisSourceCoordinator = ({
   apiRouter,
   onIchiFailure,
+  onIchiInputTooLarge,
   onIchiSuccess,
   requestIchiAnalysis,
+  useIchiranApi,
   useIchiMoeForShortText,
   diagnostics = { record: () => {} },
   createRequestId = () => crypto.randomUUID(),
@@ -23,7 +25,9 @@ const createAnalysisSourceCoordinator = ({
     }
     submittedText = text;
     const provider =
-      useIchiMoeForShortText && text.length < 90 ? "ichi" : "api";
+      !useIchiranApi || (useIchiMoeForShortText && text.length < 90)
+        ? "ichi"
+        : "api";
     const context = {
       provider,
       requestId: createRequestId(),
@@ -36,6 +40,21 @@ const createAnalysisSourceCoordinator = ({
       requestId: context.requestId,
       text: context.text,
     });
+
+    if (!useIchiranApi && text.length >= 90) {
+      activeSource = undefined;
+      activeIchiContext = undefined;
+      apiRouter.cancel();
+      diagnostics.record({
+        ...context,
+        code: "inputTooLarge",
+        durationMs: now() - context.startedAt,
+        event: "analysis.failed",
+        stage: "policy",
+      });
+      onIchiInputTooLarge();
+      return;
+    }
 
     if (provider === "ichi") {
       activeSource = "ichi";

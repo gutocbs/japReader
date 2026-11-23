@@ -9,6 +9,8 @@ const startReader = () => {
   const ipcRenderer = new EventEmitter();
   const sent = [];
   const wordElements = [];
+  const appAppends = [];
+  let appHtml;
   const originalLoad = Module._load;
   const previousWindow = global.window;
   const previousDocument = global.document;
@@ -26,10 +28,13 @@ const startReader = () => {
     if (value === "#app") {
       return {
         append: (child) => {
+          appAppends.push(child);
           if (typeof child === "object") wordElements.push(child);
         },
         empty: () => {},
-        html: () => {},
+        html: (value) => {
+          if (value !== undefined) appHtml = value;
+        },
       };
     }
     if (typeof value === "string") {
@@ -109,6 +114,8 @@ const startReader = () => {
       global.document = previousDocument;
     },
     ipcRenderer,
+    appAppends,
+    getAppHtml: () => appHtml,
     sent,
     wordElements,
   };
@@ -146,6 +153,26 @@ test("selecting a new word records its numeric word index after marking it seen"
         { ...word, fullText: "今では", status: "seen" },
       ],
     );
+  } finally {
+    reader.dispose();
+  }
+});
+
+test("shows the historical ichi input-size warning", () => {
+  const reader = startReader();
+  try {
+    reader.ipcRenderer.emit("tooManyCharacters");
+
+    assert.equal(
+      reader.getAppHtml(),
+      "Too many characters copied to clipboard...",
+    );
+    assert.deepEqual(reader.appAppends, [
+      "<br>",
+      'No request has been made to <span class="url">https://ichi.moe/</span>.',
+      "<br>",
+      "This has been implemented to prevent you from being banned.",
+    ]);
   } finally {
     reader.dispose();
   }

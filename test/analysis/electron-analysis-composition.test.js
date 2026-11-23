@@ -156,6 +156,7 @@ test("API-only composition creates no ichi.moe window and routes clipboard analy
   const coordinator = createReaderAnalysisCoordinator({
     apiRouter,
     readerBox,
+    useIchiranApi: true,
     useIchiMoeForShortText: false,
   });
 
@@ -179,6 +180,7 @@ test("composition routes ichi IPC through the latest-only coordinator", () => {
     apiRouter: { analyze: () => {}, cancel: () => {} },
     readerBox,
     requestIchiAnalysis: (text) => ichiRequests.push(text),
+    useIchiranApi: true,
     useIchiMoeForShortText: true,
   });
 
@@ -191,4 +193,50 @@ test("composition routes ichi IPC through the latest-only coordinator", () => {
 
   assert.deepEqual(ichiRequests, ["short"]);
   assert.deepEqual(messages, []);
+});
+
+test("ichi-only composition reports long text to Reader while DeepL receives it", () => {
+  const ipcMain = new EventEmitter();
+  const readerMessages = [];
+  const deepLMessages = [];
+  const apiTexts = [];
+  const coordinator = createReaderAnalysisCoordinator({
+    apiRouter: { analyze: (text) => apiTexts.push(text), cancel: () => {} },
+    readerBox: {
+      webContents: { send: (...args) => readerMessages.push(args) },
+    },
+    useIchiranApi: false,
+    useIchiMoeForShortText: false,
+  });
+
+  registerReaderClipboardAnalysis(ipcMain, coordinator);
+  registerDeepLClipboardDispatch(ipcMain, {
+    webContents: { send: (...args) => deepLMessages.push(args) },
+  });
+  ipcMain.emit("clipboardChanged", {}, "a".repeat(90));
+
+  assert.deepEqual(readerMessages, [["tooManyCharacters"]]);
+  assert.deepEqual(deepLMessages, [["translateWithDeepL", "a".repeat(90)]]);
+  assert.deepEqual(apiTexts, []);
+});
+
+test("ichi-only mode creates the hidden ichi.moe window", () => {
+  let browserWindows = 0;
+  const ichiBox = createOptionalIchiMoeWindow({
+    BrowserWindow: class {
+      constructor() {
+        browserWindows += 1;
+        this.webContents = {};
+      }
+
+      loadURL() {}
+
+      on() {}
+    },
+    enabled: true,
+    tools: { dirname_path: () => "unused" },
+  });
+
+  assert.equal(browserWindows, 1);
+  assert.ok(ichiBox);
 });

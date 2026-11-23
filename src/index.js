@@ -94,6 +94,7 @@ function createWindow(windowName, windowConfig) {
 const {
   useDeepL,
   useDeepLApi,
+  useIchiranApi,
   useIchiMoeForShortText,
   useReader,
   translationTransparent,
@@ -264,10 +265,6 @@ const createBoxes = () => {
       }
     });
 
-    ipcMain.on("tooManyCharacters", () => {
-      readerBox.webContents.send("tooManyCharacters");
-    });
-
     ipcMain.on("parseNotification", () => {
       readerBox.webContents.send("parseNotification");
     });
@@ -292,7 +289,7 @@ const createBoxes = () => {
 
     const ichiBox = createOptionalIchiMoeWindow({
       BrowserWindow,
-      enabled: useIchiMoeForShortText,
+      enabled: !useIchiranApi || useIchiMoeForShortText,
       tools,
     });
     const analysisCoordinator = createReaderAnalysisCoordinator({
@@ -303,6 +300,7 @@ const createBoxes = () => {
         ? (text, context) =>
             ichiBox.webContents.send("parseWithIchi", text, context)
         : undefined,
+      useIchiranApi,
       useIchiMoeForShortText,
     });
 
@@ -430,10 +428,6 @@ const createBoxes = () => {
 
     ipcMain.on("requestTranslation", () => {
       translationBox.webContents.send("requestTranslation");
-    });
-
-    ipcMain.on("tooManyCharacters", () => {
-      translationBox.webContents.send("tooManyCharacters");
     });
 
     ipcMain.on("translateNotification", () => {

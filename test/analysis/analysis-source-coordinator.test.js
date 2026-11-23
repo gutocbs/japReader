@@ -5,21 +5,27 @@ const {
   createAnalysisSourceCoordinator,
 } = require("../../src/analysis/analysis-source-coordinator");
 
-const createHarness = (useIchiMoeForShortText) => {
+const createHarness = ({
+  useIchiranApi = true,
+  useIchiMoeForShortText = false,
+} = {}) => {
   const apiTexts = [];
   const cancelled = [];
   const ichiTexts = [];
   const ichiSuccesses = [];
   const ichiFailures = [];
+  const ichiInputTooLarge = [];
   const coordinator = createAnalysisSourceCoordinator({
     apiRouter: {
       analyze: (text) => apiTexts.push(text),
       cancel: () => cancelled.push(true),
     },
     onIchiFailure: () => ichiFailures.push(true),
+    onIchiInputTooLarge: () => ichiInputTooLarge.push(true),
     onIchiSuccess: (words, fullText) => ichiSuccesses.push({ words, fullText }),
     requestIchiAnalysis: (text) => ichiTexts.push(text),
     useIchiMoeForShortText,
+    useIchiranApi,
   });
 
   return {
@@ -27,13 +33,16 @@ const createHarness = (useIchiMoeForShortText) => {
     cancelled,
     coordinator,
     ichiFailures,
+    ichiInputTooLarge,
     ichiSuccesses,
     ichiTexts,
   };
 };
 
-test("disabled source selection routes short and long text only to the local API", () => {
-  const { apiTexts, cancelled, coordinator, ichiTexts } = createHarness(false);
+test("API-only mode routes short and long text only to the local API", () => {
+  const { apiTexts, cancelled, coordinator, ichiTexts } = createHarness({
+    useIchiranApi: true,
+  });
 
   coordinator.analyze("a".repeat(89));
   coordinator.analyze("a".repeat(90));
@@ -55,6 +64,7 @@ test("records the selected provider with a unique correlation context", () => {
     createRequestId: () => `request-${++sequence}`,
     diagnostics: { record: (entry) => events.push(entry) },
     now: () => 42,
+    useIchiranApi: true,
     useIchiMoeForShortText: false,
   });
 
@@ -97,8 +107,11 @@ test("records the selected provider with a unique correlation context", () => {
   ]);
 });
 
-test("enabled source selection uses the JavaScript UTF-16 boundary", () => {
-  const { apiTexts, coordinator, ichiTexts } = createHarness(true);
+test("hybrid mode uses ichi below the JavaScript UTF-16 boundary", () => {
+  const { apiTexts, coordinator, ichiTexts } = createHarness({
+    useIchiranApi: true,
+    useIchiMoeForShortText: true,
+  });
   const eightyNineCodeUnits = "😀".repeat(44) + "a";
   const ninetyCodeUnits = "😀".repeat(45);
 
@@ -111,8 +124,58 @@ test("enabled source selection uses the JavaScript UTF-16 boundary", () => {
   assert.deepEqual(apiTexts, [ninetyCodeUnits]);
 });
 
+test("ichi-only mode rejects long text at the JavaScript UTF-16 boundary", () => {
+  const { apiTexts, cancelled, coordinator, ichiInputTooLarge, ichiTexts } =
+    createHarness({ useIchiranApi: false });
+  coordinator.analyze("a".repeat(89));
+  cancelled.length = 0;
+  coordinator.analyze("a".repeat(90));
+
+  assert.deepEqual(ichiTexts, ["a".repeat(89)]);
+  assert.deepEqual(apiTexts, []);
+  assert.deepEqual(cancelled, [true]);
+  assert.deepEqual(ichiInputTooLarge, [true]);
+});
+
+test("ichi-only rejection records a bounded policy failure", () => {
+  const events = [];
+  const coordinator = createAnalysisSourceCoordinator({
+    apiRouter: { analyze: () => {}, cancel: () => {} },
+    createRequestId: () => "request-1",
+    diagnostics: { record: (entry) => events.push(entry) },
+    now: () => 10,
+    onIchiInputTooLarge: () => {},
+    useIchiranApi: false,
+    useIchiMoeForShortText: false,
+  });
+
+  coordinator.analyze("a".repeat(90));
+
+  assert.deepEqual(events, [
+    {
+      event: "analysis.started",
+      provider: "ichi",
+      requestId: "request-1",
+      text: "a".repeat(90),
+    },
+    {
+      code: "inputTooLarge",
+      durationMs: 0,
+      event: "analysis.failed",
+      provider: "ichi",
+      requestId: "request-1",
+      stage: "policy",
+      startedAt: 10,
+      text: "a".repeat(90),
+    },
+  ]);
+});
+
 test("switching from API to ichi cancels local work without publishing a local error", () => {
-  const { cancelled, coordinator, ichiTexts } = createHarness(true);
+  const { cancelled, coordinator, ichiTexts } = createHarness({
+    useIchiranApi: true,
+    useIchiMoeForShortText: true,
+  });
 
   coordinator.analyze("a".repeat(90));
   coordinator.analyze("a".repeat(89));
@@ -122,8 +185,10 @@ test("switching from API to ichi cancels local work without publishing a local e
 });
 
 test("switching from ichi to API suppresses late ichi success and failure", () => {
-  const { apiTexts, coordinator, ichiFailures, ichiSuccesses } =
-    createHarness(true);
+  const { apiTexts, coordinator, ichiFailures, ichiSuccesses } = createHarness({
+    useIchiranApi: true,
+    useIchiMoeForShortText: true,
+  });
 
   coordinator.analyze("a".repeat(89));
   coordinator.analyze("a".repeat(90));
@@ -136,7 +201,10 @@ test("switching from ichi to API suppresses late ichi success and failure", () =
 });
 
 test("only publishes an ichi result for the exact latest submitted text", () => {
-  const { coordinator, ichiSuccesses } = createHarness(true);
+  const { coordinator, ichiSuccesses } = createHarness({
+    useIchiranApi: true,
+    useIchiMoeForShortText: true,
+  });
 
   coordinator.analyze("first");
   coordinator.analyze("second");
@@ -148,7 +216,10 @@ test("only publishes an ichi result for the exact latest submitted text", () => 
 });
 
 test("only publishes an ichi failure for the exact latest submitted text", () => {
-  const { coordinator, ichiFailures } = createHarness(true);
+  const { coordinator, ichiFailures } = createHarness({
+    useIchiranApi: true,
+    useIchiMoeForShortText: true,
+  });
 
   coordinator.analyze("first");
   coordinator.analyze("second");
@@ -159,8 +230,10 @@ test("only publishes an ichi failure for the exact latest submitted text", () =>
 });
 
 test("ichi failures never retry or fall back to the local API", () => {
-  const { apiTexts, coordinator, ichiFailures, ichiTexts } =
-    createHarness(true);
+  const { apiTexts, coordinator, ichiFailures, ichiTexts } = createHarness({
+    useIchiranApi: true,
+    useIchiMoeForShortText: true,
+  });
 
   coordinator.analyze("short");
   coordinator.receiveIchiFailure("short");
@@ -183,6 +256,7 @@ test("records matching ichi DOM input and transformed reader result", () => {
       requestedContext = context;
     },
     useIchiMoeForShortText: true,
+    useIchiranApi: true,
   });
 
   coordinator.analyze("育った");
@@ -218,6 +292,7 @@ test("does not cancel an ichi request that has already completed", () => {
     onIchiSuccess: () => {},
     requestIchiAnalysis: (text, context) => contexts.push(context),
     useIchiMoeForShortText: true,
+    useIchiranApi: true,
   });
 
   coordinator.analyze("first");
@@ -246,6 +321,7 @@ test("records a discarded stale ichi failure", () => {
     onIchiSuccess: () => {},
     requestIchiAnalysis: (text, context) => contexts.push(context),
     useIchiMoeForShortText: true,
+    useIchiranApi: true,
   });
 
   coordinator.analyze("first");
@@ -257,4 +333,20 @@ test("records a discarded stale ichi failure", () => {
     durationMs: 0,
     event: "analysis.discarded",
   });
+});
+
+test("a blocked ichi-only request invalidates a pending ichi result and failure", () => {
+  const { cancelled, coordinator, ichiFailures, ichiSuccesses } = createHarness(
+    { useIchiranApi: false },
+  );
+
+  coordinator.analyze("short");
+  cancelled.length = 0;
+  coordinator.analyze("a".repeat(90));
+  coordinator.receiveIchiResult(["stale"], "short");
+  coordinator.receiveIchiFailure("short");
+
+  assert.deepEqual(cancelled, [true]);
+  assert.deepEqual(ichiSuccesses, []);
+  assert.deepEqual(ichiFailures, []);
 });

@@ -67,6 +67,7 @@ const startApplicationWithOptions = async (configuredOptions = {}) => {
                 useDeepL: false,
                 useDeepLApi: false,
                 useIchiMoeForShortText: false,
+                useIchiranApi: true,
                 useReader: true,
                 ...configuredOptions,
               }
@@ -267,4 +268,21 @@ test("uses a persisted valid API origin and safely falls back from an invalid on
     console.warn = originalWarn;
     global.fetch = originalFetch;
   }
+});
+
+test("creates the ichi window when the local API is disabled", async () => {
+  const { windows } = await startApplicationWithOptions({
+    useIchiranApi: false,
+    useIchiMoeForShortText: false,
+  });
+
+  assert.ok(
+    windows.some(
+      (window) =>
+        window.config.show === false &&
+        window.config.width === 800 &&
+        window.config.height === 600 &&
+        window.config.webPreferences.contextIsolation,
+    ),
+  );
 });
