@@ -20,6 +20,10 @@ const {
   registerReaderClipboardAnalysis,
 } = require("./analysis/electron-analysis-composition");
 const { createAnalysisLogWriter } = require("./analysis/analysis-log-writer");
+const {
+  DEFAULT_ICHIRAN_API_BASE_URL,
+  resolveIchiranApiEndpoint,
+} = require("./analysis/ichiran-api-url");
 
 const tools = require("@tools");
 
@@ -97,7 +101,13 @@ const {
   dictAlwaysOnTop,
   translationAlwaysOnTop,
   recordIchiranAnalysisDiagnostics,
+  ichiranApiBaseUrl,
 } = OPTIONS.get("options");
+
+const ichiranApiEndpoint = resolveIchiranApiEndpoint(
+  ichiranApiBaseUrl ?? DEFAULT_ICHIRAN_API_BASE_URL,
+  console.warn,
+);
 
 const diagnostics = createAnalysisLogWriter({
   enabled: recordIchiranAnalysisDiagnostics,
@@ -275,6 +285,7 @@ const createBoxes = () => {
 
     localApiRouter = createReaderAnalysisRouter({
       diagnostics,
+      endpoint: ichiranApiEndpoint,
       fetchImpl: fetch,
       readerBox,
     });

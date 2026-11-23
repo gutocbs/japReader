@@ -45,13 +45,14 @@ const createHarness = (overrides = {}) => {
   return { calls, failures, router, successes };
 };
 
-test("posts the submitted text to the fixed local endpoint and publishes adapted data", async () => {
-  const { calls, router, successes } = createHarness();
+test("posts the submitted text to the injected endpoint and publishes adapted data", async () => {
+  const endpoint = "http://api.example.test:19090/analyze";
+  const { calls, router, successes } = createHarness({ endpoint });
 
   router.analyze("猫です");
 
   assert.equal(calls.length, 1);
-  assert.equal(calls[0].url, "http://127.0.0.1:8080/analyze");
+  assert.equal(calls[0].url, endpoint);
   assert.deepEqual(calls[0].options, {
     method: "POST",
     headers: { "content-type": "application/json" },

@@ -234,3 +234,37 @@ test("applies independent persisted always-on-top values and flips an enabled re
   ipcMain.emit("readerOnTop");
   assert.deepEqual(readerWindow.alwaysOnTopCalls, [true, false]);
 });
+
+test("uses a persisted valid API origin and safely falls back from an invalid one", async () => {
+  const originalFetch = global.fetch;
+  const originalWarn = console.warn;
+  const fetchCalls = [];
+  const warnings = [];
+  global.fetch = (url) => {
+    fetchCalls.push(url);
+    return new Promise(() => {});
+  };
+  console.warn = (message) => warnings.push(message);
+
+  try {
+    const validApplication = await startApplicationWithOptions({
+      ichiranApiBaseUrl: "https://api.example.test:19090/",
+    });
+    validApplication.ipcMain.emit("clipboardChanged", {}, "猫です");
+    assert.deepEqual(fetchCalls, ["https://api.example.test:19090/analyze"]);
+    assert.deepEqual(warnings, []);
+
+    fetchCalls.length = 0;
+    const invalidApplication = await startApplicationWithOptions({
+      ichiranApiBaseUrl: "https://user:secret@api.example.test/analyze",
+    });
+    invalidApplication.ipcMain.emit("clipboardChanged", {}, "犬です");
+    assert.deepEqual(fetchCalls, ["http://127.0.0.1:18080/analyze"]);
+    assert.deepEqual(warnings, [
+      "Invalid Ichiran API base URL; using the default.",
+    ]);
+  } finally {
+    console.warn = originalWarn;
+    global.fetch = originalFetch;
+  }
+});

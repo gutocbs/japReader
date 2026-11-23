@@ -1,5 +1,3 @@
-const DEFAULT_ENDPOINT = "http://127.0.0.1:8080/analyze";
-
 const failureCodeForStatus = (status) => {
   switch (status) {
     case 413:
@@ -20,7 +18,7 @@ const createLocalApiRouter = ({
   adaptResponse,
   onSuccess,
   onFailure,
-  endpoint = DEFAULT_ENDPOINT,
+  endpoint,
   diagnostics = { record: () => {} },
   now = () => performance.now(),
 }) => {

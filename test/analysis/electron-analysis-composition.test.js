@@ -41,7 +41,9 @@ test("composes reader API callbacks and keeps DeepL clipboard dispatch independe
   };
   const router = createReaderAnalysisRouter({
     adaptResponse: (body, text) => ({ words: body.words, fullText: text }),
-    fetchImpl: () => {
+    endpoint: "http://api.example.test:19090/analyze",
+    fetchImpl: (url) => {
+      assert.equal(url, "http://api.example.test:19090/analyze");
       const request = deferred();
       requests.push(request);
       return request.promise;

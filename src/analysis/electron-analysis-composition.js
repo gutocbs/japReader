@@ -7,12 +7,14 @@ const { createLocalApiRouter } = require("./local-api-router");
 const createReaderAnalysisRouter = ({
   readerBox,
   fetchImpl,
+  endpoint,
   adaptResponse = adaptAnalyzeResponse,
   diagnostics,
 }) =>
   createLocalApiRouter({
     adaptResponse,
     diagnostics,
+    endpoint,
     fetchImpl,
     onSuccess: ({ words, fullText }, context) => {
       const message = ["receiveParsedData", words, fullText];
